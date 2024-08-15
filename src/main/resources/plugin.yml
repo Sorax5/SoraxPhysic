@@ -1,0 +1,4 @@
+name: SoraxPhysic
+version: '1.0-SNAPSHOT'
+main: fr.phylisiumstudio.soraxPhysic.SoraxPhysic
+api-version: '1.21'

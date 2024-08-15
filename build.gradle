@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id "io.github.goooler.shadow" version "8.1.7"
+}
+
+group = 'fr.phylisiumstudio'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+    maven { url = "https://repo.aikar.co/content/groups/aikar/" }
+    maven { url = "https://maven.enginehub.org/repo/" }
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.0-SNAPSHOT")
+
+    implementation 'cz.advel.jbullet:jbullet:20101010-1'
+    implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
+}
+
+def targetJavaVersion = 21
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ["-parameters"]
+    options.fork = true
+
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release.set(targetJavaVersion)
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+jar {
+    destinationDirectory.set(file("./builds/"))
+}
+
+shadowJar {
+    destinationDirectory.set(file("./builds/"))
+
+    relocate 'co.aikar.commands', 'fr.phylisiumstudio.acf'
+    relocate 'co.aikar.locales', 'fr.phylisiumstudio.locales'
+}
+
+build.dependsOn shadowJar
