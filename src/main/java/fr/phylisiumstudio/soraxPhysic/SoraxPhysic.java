@@ -6,6 +6,8 @@ import com.sk89q.worldedit.session.SessionManager;
 import fr.phylisiumstudio.soraxPhysic.commands.PhysicsCommands;
 import fr.phylisiumstudio.soraxPhysic.listeners.RigidbodyListener;
 import fr.phylisiumstudio.soraxPhysic.listeners.ToolsListener;
+import org.bstats.bukkit.Metrics;
+import org.bstats.charts.SimplePie;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +38,13 @@ public final class SoraxPhysic extends JavaPlugin {
     public void onDisable() {
         this.physicsManager.clearAll();
         this.physicsManager.stop();
+    }
+
+    private void setupBstats(){
+        int pluginId = 23021;
+        Metrics metrics = new Metrics(this, pluginId);
+        metrics.addCustomChart(new SimplePie("used_worldedit_version", WorldEdit::getVersion));
+        metrics.addCustomChart(new SimplePie("used_physics_version", () -> this.getPluginMeta().getVersion()));
     }
 
     private void setupCommands(){

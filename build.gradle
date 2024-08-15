@@ -26,6 +26,7 @@ dependencies {
 
     implementation 'cz.advel.jbullet:jbullet:20101010-1'
     implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
+    implementation "org.bstats:bstats-bukkit:3.0.2"
 }
 
 def targetJavaVersion = 21
@@ -66,6 +67,7 @@ shadowJar {
 
     relocate 'co.aikar.commands', 'fr.phylisiumstudio.acf'
     relocate 'co.aikar.locales', 'fr.phylisiumstudio.locales'
+    relocate 'org.bstats', 'fr.phylisiumstudio.bstats'
 }
 
 build.dependsOn shadowJar
