@@ -143,6 +143,8 @@ public class PhysicsManager {
         BlockDisplay blockDisplay = bukkitWorld.spawn(location, BlockDisplay.class, display -> {
             display.setBlock(material.createBlockData());
             display.setRotation(0, 0);
+            display.setInterpolationDuration(1);
+            display.setTeleportDuration(1);
 
             Transformation transformation = display.getTransformation();
             org.joml.Vector3f translation = new org.joml.Vector3f(-radius/2, -radius/2, -radius/2);
