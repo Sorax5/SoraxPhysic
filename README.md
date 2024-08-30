@@ -21,31 +21,40 @@
 ## Commands
 
 physics.create.box
+
 ```/physics create box <block> <mass> <xScale> <yScale> <zScale>``` - Create a box with the specified parameters.
 
 physics.create.sphere
+
 ```/physics create sphere <block> <mass> <radius>``` - Create a sphere with the specified parameters.
 
 physics.clear
+
 ```/physics clear``` - Clear all physics objects.
 
 physics.freeze
+
 ```/physics freeze``` - Freeze all physics objects.
 
 physics.timespan
+
 ```/physics timespan <timespan>``` - Set the timespan for the physics engine default 1/20.
 
 physics.substeps
+
 ```/physics substeps <substeps>``` - Set the substeps for the physics engine default 30.
 
 physics.chunk
+
 ```/physics chunk <chunk>``` - Convert a chunk to a physics object.
 
 help
+
 ```/physics help``` - Show the help message.
 
 ## Download
 You can download the plugin from the dev builds [here](https://github.com/Sorax5/SoraxPhysic/actions).
+
 You will need worldedit to use the plugin.
 
 ## Developer Note
