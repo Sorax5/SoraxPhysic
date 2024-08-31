@@ -62,6 +62,10 @@ This plugin is still in development and is not recommended for production server
 
 In case you use it, have fun with the plugin and if you have any questions, feel free to contact me on discord soraxdubbing.
 
+## Credits
+This implementation is inspired by the work of youtuber 
+[SethBling](https://www.youtube.com/@SethBling/videos)
+
 ## License
 this plugin is licensed under the GPL-3.0 license. You can find more information in the LICENSE file.
 
