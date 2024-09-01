@@ -19,8 +19,8 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import java.util.List;
 
 public class RigidbodyListener implements Listener {
-    private PhysicsManager physicsManager;
-    private Server server;
+    private final PhysicsManager physicsManager;
+    private final Server server;
 
     public RigidbodyListener(PhysicsManager physicsManager, Server server) {
         this.physicsManager = physicsManager;

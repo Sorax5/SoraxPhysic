@@ -30,9 +30,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.bukkit.block.BlockFace.NORTH;
-import static org.bukkit.block.BlockFace.SOUTH;
-
 public class PhysicsManager {
     private DiscreteDynamicsWorld dynamicsWorld;
     private final World bukkitWorld;

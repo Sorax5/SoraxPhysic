@@ -1,6 +1,5 @@
 package fr.phylisiumstudio.soraxPhysic;
 
-import fr.phylisiumstudio.logic.ItemLinker;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;

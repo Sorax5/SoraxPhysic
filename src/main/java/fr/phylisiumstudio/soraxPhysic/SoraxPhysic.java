@@ -5,7 +5,7 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.session.SessionManager;
 import fr.phylisiumstudio.soraxPhysic.commands.PhysicsCommands;
 import fr.phylisiumstudio.soraxPhysic.listeners.RigidbodyListener;
-import fr.phylisiumstudio.soraxPhysic.listeners.ToolsListener;
+import fr.phylisiumstudio.soraxPhysic.listeners.PlayerActionListener;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Material;
@@ -80,7 +80,7 @@ public final class SoraxPhysic extends JavaPlugin {
     }
 
     private void setupListeners() {
-        getServer().getPluginManager().registerEvents(new ToolsListener(physicsManager, this.itemLinkerManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerActionListener(physicsManager, this.itemLinkerManager), this);
         getServer().getPluginManager().registerEvents(new RigidbodyListener(physicsManager, getServer()), this);
     }
 
