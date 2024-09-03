@@ -161,4 +161,12 @@ public class PhysicsManager {
         }
     }
 
+    /**
+     * Stop the physics engine
+     */
+    public void stop() {
+        running = false;
+        executorService.shutdown();
+    }
+
 }

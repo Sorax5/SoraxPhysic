@@ -6,6 +6,7 @@ import com.sk89q.worldedit.session.SessionManager;
 import fr.phylisiumstudio.soraxPhysic.commands.PhysicsCommands;
 import fr.phylisiumstudio.soraxPhysic.listeners.RigidbodyListener;
 import fr.phylisiumstudio.soraxPhysic.listeners.PlayerActionListener;
+import fr.phylisiumstudio.soraxPhysic.listeners.WorldListener;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Material;
@@ -32,11 +33,12 @@ public final class SoraxPhysic extends JavaPlugin {
         setupPhysics();
         setupCommands();
         setupListeners();
+        setupBstats();
     }
 
     @Override
     public void onDisable() {
-        this.physicsManager.clearAll();
+        this.physicsManager.clear();
         this.physicsManager.stop();
     }
 
@@ -75,11 +77,11 @@ public final class SoraxPhysic extends JavaPlugin {
     }
 
     private void setupPhysics() {
-        World world = getServer().getWorlds().get(0);
-        physicsManager = new PhysicsManager(world);
+        physicsManager = new PhysicsManager();
     }
 
     private void setupListeners() {
+        getServer().getPluginManager().registerEvents(new WorldListener(physicsManager), this);
         getServer().getPluginManager().registerEvents(new PlayerActionListener(physicsManager, this.itemLinkerManager), this);
         getServer().getPluginManager().registerEvents(new RigidbodyListener(physicsManager, getServer()), this);
     }
