@@ -35,6 +35,9 @@ public class BulletWorldPhysics extends WorldPhysics {
 
     private final List<RigidBlock> blocks;
 
+    private float timespan = 1.0f / 20.0f;
+    private int maxSubSteps = 30;
+
     public BulletWorldPhysics(World bukkitWorld, DiscreteDynamicsWorld bulletWorld) {
         this.bulletWorld = bulletWorld;
         this.bukkitWorld = bukkitWorld;
@@ -46,7 +49,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     public void stepSimulation() {
-        bulletWorld.stepSimulation(1/20f, 10);
+        bulletWorld.stepSimulation(timespan, maxSubSteps);
     }
 
     /**
@@ -55,7 +58,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      * @return the unique id
      */
     @Override
-    public UUID uniqueId() {
+    public UUID getUniqueId() {
         return bukkitWorld.getUID();
     }
 
@@ -274,6 +277,43 @@ public class BulletWorldPhysics extends WorldPhysics {
         bulletWorld.addRigidBody(body);
     }
 
+    /**
+     * Get the time freeze
+     */
+    @Override
+    public float getTimespan() {
+        return timespan;
+    }
+
+    /**
+     * Set the time freeze
+     *
+     * @param timespan
+     */
+    @Override
+    public void setTimespan(float timespan) {
+        this.timespan = timespan;
+    }
+
+    /**
+     * Get Max substeps
+     */
+    @Override
+    public int getMaxSubSteps() {
+        return maxSubSteps;
+    }
+
+    /**
+     * Set Max substeps
+     *
+     * @param maxSubSteps
+     */
+    @Override
+    public void setMaxSubSteps(int maxSubSteps) {
+        this.maxSubSteps = maxSubSteps;
+    }
+
+
     private void addFace(CompoundShape compoundShape, Vector3f blockPos, Vector3f normal) {
         Vector3f halfExtents = new Vector3f(0.5f, 0.5f, 0.5f);
         BoxShape boxShape = new BoxShape(halfExtents);
@@ -290,4 +330,6 @@ public class BulletWorldPhysics extends WorldPhysics {
     private boolean isAirBlock(int x, int y, int z) {
         return bukkitWorld.getBlockAt(x, y, z).getType().equals(Material.AIR);
     }
+
+
 }

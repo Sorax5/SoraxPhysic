@@ -27,7 +27,7 @@ public abstract class WorldPhysics {
      *
      * @return the unique id
      */
-    public abstract UUID uniqueId();
+    public abstract UUID getUniqueId();
 
     /**
      * Get the blocks
@@ -89,4 +89,24 @@ public abstract class WorldPhysics {
     public Lock getLock() {
         return lock;
     }
+
+    /**
+     * Get the time freeze
+     */
+    public abstract float getTimespan();
+
+    /**
+     * Set the time freeze
+     */
+    public abstract void setTimespan(float timeFreeze);
+
+    /**
+     * Get Max substeps
+     */
+    public abstract int getMaxSubSteps();
+
+    /**
+     * Set Max substeps
+     */
+    public abstract void setMaxSubSteps(int maxSubSteps);
 }
