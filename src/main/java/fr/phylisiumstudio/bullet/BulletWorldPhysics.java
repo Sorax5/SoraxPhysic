@@ -1,0 +1,293 @@
+package fr.phylisiumstudio.bullet;
+
+import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.collision.shapes.CompoundShape;
+import com.bulletphysics.collision.shapes.SphereShape;
+import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
+import com.bulletphysics.dynamics.DynamicsWorld;
+import com.bulletphysics.dynamics.RigidBody;
+import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import com.bulletphysics.linearmath.DefaultMotionState;
+import com.bulletphysics.linearmath.Transform;
+import fr.phylisiumstudio.logic.WorldPhysics;
+import fr.phylisiumstudio.soraxPhysic.BukkitMotionState;
+import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
+import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Interaction;
+import org.bukkit.util.Transformation;
+import org.jetbrains.annotations.Nullable;
+
+import javax.vecmath.Vector3f;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+public class BulletWorldPhysics extends WorldPhysics {
+
+    private final DynamicsWorld bulletWorld;
+    private final World bukkitWorld;
+
+    private final List<RigidBlock> blocks;
+
+    public BulletWorldPhysics(World bukkitWorld, DiscreteDynamicsWorld bulletWorld) {
+        this.bulletWorld = bulletWorld;
+        this.bukkitWorld = bukkitWorld;
+        this.blocks = new ArrayList<>();
+    }
+
+    /**
+     * Step the simulation
+     */
+    @Override
+    public void stepSimulation() {
+        bulletWorld.stepSimulation(1/20f, 10);
+    }
+
+    /**
+     * Get the unique id of the world (bukkit world)
+     *
+     * @return the unique id
+     */
+    @Override
+    public UUID uniqueId() {
+        return bukkitWorld.getUID();
+    }
+
+    /**
+     * Get the blocks
+     *
+     * @return the blocks
+     */
+    @Override
+    public List<RigidBlock> getBlocks() {
+        return blocks;
+    }
+
+    /**
+     * Create a box
+     *
+     * @param location  the location (must be in the same world)
+     * @param blockData the block data to use
+     * @param mass      the mass of the block
+     * @param xScale    the x scale
+     * @param yScale    the y scale
+     * @param zScale    the z scale
+     * @return the box
+     */
+    @Override
+    public RigidBlock createBox(Location location, BlockData blockData, float mass, float xScale, float yScale, float zScale) {
+        assert location.getWorld().equals(bukkitWorld);
+
+        BlockDisplay blockDisplay = bukkitWorld.spawn(location, BlockDisplay.class, display -> {
+            display.setBlock(blockData);
+            display.setRotation(0, 0);
+            display.setTeleportDuration(1);
+
+            Transformation transformation = display.getTransformation();
+            org.joml.Vector3f translation = new org.joml.Vector3f(-xScale/2, -yScale/2, -zScale/2);
+            org.joml.Vector3f scale = new org.joml.Vector3f(xScale, yScale, zScale);
+            display.setTransformation(new Transformation(translation, transformation.getLeftRotation(), scale, transformation.getRightRotation()));
+        });
+
+        Interaction interaction = bukkitWorld.spawn(location, Interaction.class, display -> {
+            display.setInteractionHeight(xScale);
+            display.setInteractionWidth(zScale);
+            display.setResponsive(true);
+        });
+
+        Vector3f position = new Vector3f(xScale/2, yScale/2, zScale/2);
+        BoxShape boxShape = new BoxShape(position);
+
+        Transform transform = new Transform();
+        transform.setIdentity();
+        transform.origin.set((float) location.getX(), (float) location.getY(), (float) location.getZ());
+
+        Vector3f localInertia = new Vector3f(0, 0, 0);
+        boxShape.calculateLocalInertia(3, localInertia);
+
+
+        RigidBodyConstructionInfo constructionInfo = new RigidBodyConstructionInfo(mass, null, boxShape, localInertia);
+        RigidBody body = new RigidBody(constructionInfo);
+        body.setWorldTransform(transform);
+        body.setRestitution(0.0f);
+
+        RigidBlock rigidBlock = new RigidBlock(body, blockDisplay, interaction);
+        BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
+        body.setMotionState(motionState);
+
+        synchronized (getLock()){
+            bulletWorld.addRigidBody(body);
+            blocks.add(rigidBlock);
+        }
+
+        Chunk chunk = location.getChunk();
+        Vector3f pos1 = new Vector3f(chunk.getX() * 16, 0, chunk.getZ() * 16);
+        Vector3f pos2 = new Vector3f(chunk.getX() * 16 + 16, 256, chunk.getZ() * 16 + 16);
+        convertChunk(pos1, pos2);
+
+        return rigidBlock;
+    }
+
+    /**
+     * Create a sphere
+     *
+     * @param location the location (must be in the same world)
+     * @param radius   the radius
+     * @param mass     the mass
+     * @return the sphere
+     */
+    @Override
+    public RigidBlock createSphere(Location location, BlockData data, float radius, float mass) {
+        assert location.getWorld().equals(bukkitWorld);
+
+        BlockDisplay blockDisplay = bukkitWorld.spawn(location, BlockDisplay.class, display -> {
+            display.setBlock(data);
+            display.setRotation(0, 0);
+            display.setInterpolationDuration(1);
+            display.setTeleportDuration(1);
+
+            float length = (float) (radius * Math.sqrt(2));
+
+            Transformation transformation = display.getTransformation();
+            org.joml.Vector3f translation = new org.joml.Vector3f(-length/2, -length/2, -length/2);
+            org.joml.Vector3f scale = new org.joml.Vector3f(length, length, length);
+            display.setTransformation(new Transformation(translation, transformation.getLeftRotation(), scale, transformation.getRightRotation()));
+        });
+        Interaction hitbox = bukkitWorld.spawn(location, Interaction.class, display -> {
+            display.setInteractionHeight(radius);
+            display.setInteractionWidth(radius);
+            display.setResponsive(true);
+        });
+        SphereShape sphereShape = new SphereShape(radius);
+
+        Transform transform = new Transform();
+        transform.setIdentity();
+        transform.origin.set((float) location.getX(), (float) location.getY(), (float) location.getZ());
+
+        Vector3f localInertia = new Vector3f(0, 0, 0);
+        sphereShape.calculateLocalInertia(3, localInertia);
+
+        RigidBodyConstructionInfo constructionInfo = new RigidBodyConstructionInfo(mass, null, sphereShape, localInertia);
+        RigidBody body = new RigidBody(constructionInfo);
+        body.setWorldTransform(transform);
+        body.setRestitution(0.0f);
+
+        RigidBlock rigidBlock = new RigidBlock(body, blockDisplay, hitbox);
+        BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
+        body.setMotionState(motionState);
+
+        synchronized (getLock()){
+            bulletWorld.addRigidBody(body);
+            blocks.add(rigidBlock);
+        }
+
+        Chunk chunk = location.getChunk();
+        Vector3f pos1 = new Vector3f(chunk.getX() * 16, 0, chunk.getZ() * 16);
+        Vector3f pos2 = new Vector3f(chunk.getX() * 16 + 16, 256, chunk.getZ() * 16 + 16);
+        convertChunk(pos1, pos2);
+
+        return rigidBlock;
+    }
+
+    /**
+     * Remove a block
+     *
+     * @param block the block to remove
+     */
+    @Override
+    public void removeBlock(RigidBlock block) {
+
+    }
+
+    /**
+     * Clear the world
+     */
+    @Override
+    public void clear() {
+        synchronized (getLock()){
+            for (RigidBlock block : blocks) {
+                bulletWorld.removeRigidBody(block.getRigidBody());
+                block.getBlockDisplay().remove();
+                block.getInteraction().remove();
+            }
+        }
+    }
+
+
+    /**
+     * Get the block with the given id
+     *
+     * @param id the id
+     * @return the block
+     */
+    @Override
+    @Nullable
+    public RigidBlock getBlock(UUID id) {
+        return this.blocks.stream().filter(block -> block.getUniqueId().equals(id)).findFirst().orElse(null);
+    }
+
+    @Override
+    public void convertChunk(Vector3f pos1, Vector3f pos2) {
+        int startX = (int) Math.min(pos1.x, pos2.x);
+        int endX = (int) Math.max(pos1.x, pos2.x);
+        int startY = (int) Math.min(pos1.y, pos2.y);
+        int endY = (int) Math.max(pos1.y, pos2.y);
+        int startZ = (int) Math.min(pos1.z, pos2.z);
+        int endZ = (int) Math.max(pos1.z, pos2.z);
+
+        CompoundShape compoundShape = new CompoundShape();
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+                for (int z = startZ; z <= endZ; z++) {
+                    Vector3f blockPos = new Vector3f(x, y, z);
+                    Material blockType = bukkitWorld.getBlockAt(x, y, z).getType();
+
+                    if (blockType.isSolid()) {
+                        if (isAirBlock(x + 1, y, z)) addFace(compoundShape, blockPos, new Vector3f(1, 0, 0));  // Face droite
+                        if (isAirBlock(x - 1, y, z)) addFace(compoundShape, blockPos, new Vector3f(-1, 0, 0)); // Face gauche
+                        if (isAirBlock(x, y + 1, z)) addFace(compoundShape, blockPos, new Vector3f(0, 1, 0));  // Face supérieure
+                        if (isAirBlock(x, y - 1, z)) addFace(compoundShape, blockPos, new Vector3f(0, -1, 0)); // Face inférieure
+                        if (isAirBlock(x, y, z + 1)) addFace(compoundShape, blockPos, new Vector3f(0, 0, 1));  // Face avant
+                        if (isAirBlock(x, y, z - 1)) addFace(compoundShape, blockPos, new Vector3f(0, 0, -1)); // Face arrière
+                    }
+                }
+            }
+        }
+
+        Transform transform = new Transform();
+        transform.setIdentity();
+
+        float mass = 0.0f;
+        Vector3f inertia = new Vector3f(0, 0, 0);
+
+        DefaultMotionState motionState = new DefaultMotionState(transform);
+        RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, motionState, compoundShape, inertia);
+        RigidBody body = new RigidBody(rbInfo);
+
+        bulletWorld.addRigidBody(body);
+    }
+
+    private void addFace(CompoundShape compoundShape, Vector3f blockPos, Vector3f normal) {
+        Vector3f halfExtents = new Vector3f(0.5f, 0.5f, 0.5f);
+        BoxShape boxShape = new BoxShape(halfExtents);
+
+        Vector3f facePos = new Vector3f(blockPos);
+        facePos.add(normal);
+
+        Transform faceTransform = new Transform();
+        faceTransform.setIdentity();
+        faceTransform.origin.set(facePos);
+        compoundShape.addChildShape(faceTransform, boxShape);
+    }
+
+    private boolean isAirBlock(int x, int y, int z) {
+        return bukkitWorld.getBlockAt(x, y, z).getType().equals(Material.AIR);
+    }
+}

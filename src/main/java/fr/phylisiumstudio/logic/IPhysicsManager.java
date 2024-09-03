@@ -11,7 +11,7 @@ public interface IPhysicsManager {
      * @param world The world
      * @return The physics engine
      */
-    IWorldPhysics getWorldPhysics(World world);
+    WorldPhysics getWorldPhysics(World world);
 
     /**
      * Setup the physics engine for a world
