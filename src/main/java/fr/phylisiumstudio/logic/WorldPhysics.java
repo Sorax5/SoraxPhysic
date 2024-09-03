@@ -91,14 +91,14 @@ public abstract class WorldPhysics {
     }
 
     /**
-     * Get the time freeze
+     * Get the time span
      */
     public abstract float getTimespan();
 
     /**
-     * Set the time freeze
+     * Set the time span
      */
-    public abstract void setTimespan(float timeFreeze);
+    public abstract void setTimespan(float timespan);
 
     /**
      * Get Max substeps
@@ -109,4 +109,16 @@ public abstract class WorldPhysics {
      * Set Max substeps
      */
     public abstract void setMaxSubSteps(int maxSubSteps);
+
+    /**
+     * set freeze
+     * @param freeze the freeze
+     */
+    public abstract void setFreeze(boolean freeze);
+
+    /**
+     * is frozen
+     * @return is frozen
+     */
+    public abstract boolean isFrozen();
 }

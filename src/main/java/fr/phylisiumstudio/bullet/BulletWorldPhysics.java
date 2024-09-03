@@ -37,6 +37,7 @@ public class BulletWorldPhysics extends WorldPhysics {
 
     private float timespan = 1.0f / 20.0f;
     private int maxSubSteps = 30;
+    private boolean timeFreeze = false;
 
     public BulletWorldPhysics(World bukkitWorld, DiscreteDynamicsWorld bulletWorld) {
         this.bulletWorld = bulletWorld;
@@ -49,6 +50,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     public void stepSimulation() {
+        if (timeFreeze) return;
         bulletWorld.stepSimulation(timespan, maxSubSteps);
     }
 
@@ -311,6 +313,26 @@ public class BulletWorldPhysics extends WorldPhysics {
     @Override
     public void setMaxSubSteps(int maxSubSteps) {
         this.maxSubSteps = maxSubSteps;
+    }
+
+    /**
+     * set freeze
+     *
+     * @param freeze the freeze
+     */
+    @Override
+    public void setFreeze(boolean freeze) {
+        this.timeFreeze = freeze;
+    }
+
+    /**
+     * is frozen
+     *
+     * @return is frozen
+     */
+    @Override
+    public boolean isFrozen() {
+        return timeFreeze;
     }
 
 
