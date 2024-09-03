@@ -11,6 +11,7 @@ import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.BukkitMotionState;
+import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -126,7 +127,7 @@ public class BulletWorldPhysics extends WorldPhysics {
         BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
         body.setMotionState(motionState);
 
-        synchronized (getLock()){
+        synchronized (PhysicsManager.lock){
             bulletWorld.addRigidBody(body);
             blocks.add(rigidBlock);
         }
@@ -187,7 +188,7 @@ public class BulletWorldPhysics extends WorldPhysics {
         BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
         body.setMotionState(motionState);
 
-        synchronized (getLock()){
+        synchronized (PhysicsManager.lock){
             bulletWorld.addRigidBody(body);
             blocks.add(rigidBlock);
         }
@@ -215,7 +216,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     public void clear() {
-        synchronized (getLock()){
+        synchronized (PhysicsManager.lock){
             for (RigidBlock block : blocks) {
                 bulletWorld.removeRigidBody(block.getRigidBody());
                 block.getBlockDisplay().remove();

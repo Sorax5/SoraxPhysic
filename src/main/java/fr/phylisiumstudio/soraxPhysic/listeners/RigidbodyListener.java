@@ -1,6 +1,7 @@
 package fr.phylisiumstudio.soraxPhysic.listeners;
 
 import com.bulletphysics.dynamics.RigidBody;
+import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import fr.phylisiumstudio.soraxPhysic.event.LeftClickRigidblockEvent;
 import fr.phylisiumstudio.soraxPhysic.event.RightClickRigidblockEvent;
@@ -33,7 +34,9 @@ public class RigidbodyListener implements Listener {
             return;
         }
 
-        List<RigidBlock> rigidBlocks = physicsManager.getRigidBlocks();
+        WorldPhysics world = this.physicsManager.getWorldPhysics(event.getPlayer().getWorld().getUID());
+
+        List<RigidBlock> rigidBlocks = world.getBlocks();
         World bukkitWorld = event.getPlayer().getWorld();
 
         RigidBlock rigidBlock = rigidBlocks.stream()
@@ -64,8 +67,9 @@ public class RigidbodyListener implements Listener {
             return;
         }
 
-        List<RigidBlock> rigidBlocks = physicsManager.getRigidBlocks();
-        World bukkitWorld = hitbox.getWorld();
+        WorldPhysics worldPhysics = this.physicsManager.getWorldPhysics(player.getWorld().getUID());
+
+        List<RigidBlock> rigidBlocks = worldPhysics.getBlocks();
 
         RigidBlock rigidBlock = rigidBlocks.stream()
                 .filter(motionState -> motionState.getInteraction().equals(hitbox))
@@ -79,7 +83,7 @@ public class RigidbodyListener implements Listener {
         if (blockDisplay == null || body == null) {
             return;
         }
-        Location clickedLocation = event.getDamageSource().getDamageLocation();
+        Location clickedLocation = event.getEntity().getLocation();
 
         LeftClickRigidblockEvent rightClickRigidbodyEvent = new LeftClickRigidblockEvent(player, rigidBlock, clickedLocation);
         this.server.getPluginManager().callEvent(rightClickRigidbodyEvent);

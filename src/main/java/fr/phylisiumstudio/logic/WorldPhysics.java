@@ -15,8 +15,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class WorldPhysics {
 
-    private final Lock lock = new ReentrantLock();
-
     /**
      * Step the simulation
      */
@@ -82,13 +80,6 @@ public abstract class WorldPhysics {
      * @param pos2 the second position
      */
     public abstract void convertChunk(Vector3f pos1, Vector3f pos2);
-
-    /**
-     * Get the lock
-     */
-    public Lock getLock() {
-        return lock;
-    }
 
     /**
      * Get the time span

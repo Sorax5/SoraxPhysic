@@ -28,7 +28,7 @@ public class PhysicsManager {
     private boolean running = true;
 
     private final ExecutorService executorService;
-    private final Object lock = new Object();
+    public static final Object lock = new Object();
 
     private final Logger logger = LoggerFactory.getLogger(PhysicsManager.class);
 
