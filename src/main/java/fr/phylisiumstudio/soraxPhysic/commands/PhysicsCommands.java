@@ -3,41 +3,20 @@ package fr.phylisiumstudio.soraxPhysic.commands;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
-import com.bulletphysics.dynamics.RigidBody;
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.IncompleteRegionException;
-import com.sk89q.worldedit.LocalSession;
-import com.sk89q.worldedit.MaxChangedBlocksException;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.SessionManager;
-import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.block.BlockState;
 import fr.phylisiumstudio.logic.WorldPhysics;
-import fr.phylisiumstudio.soraxPhysic.ItemLinkerManager;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import javax.vecmath.Vector3f;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @CommandAlias("physics")
 @Description("Physics related commands")
 public class PhysicsCommands extends BaseCommand {
     @Dependency
     private PhysicsManager physicsManager;
-
-    @Dependency
-    private ItemLinkerManager itemLinkerManager;
 
     @Dependency
     private SessionManager sessionManager;

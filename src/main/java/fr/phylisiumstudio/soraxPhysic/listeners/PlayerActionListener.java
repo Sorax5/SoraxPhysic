@@ -1,6 +1,5 @@
 package fr.phylisiumstudio.soraxPhysic.listeners;
 
-import fr.phylisiumstudio.soraxPhysic.ItemLinkerManager;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import fr.phylisiumstudio.soraxPhysic.event.LeftClickRigidblockEvent;
 import fr.phylisiumstudio.soraxPhysic.event.RightClickRigidblockEvent;
@@ -17,11 +16,9 @@ import javax.vecmath.Vector3f;
 
 public class PlayerActionListener implements Listener {
     private final PhysicsManager physicsManager;
-    private final ItemLinkerManager itemLinkerManager;
 
-    public PlayerActionListener(PhysicsManager physicsManager, ItemLinkerManager itemLinkerManager) {
+    public PlayerActionListener(PhysicsManager physicsManager) {
         this.physicsManager = physicsManager;
-        this.itemLinkerManager = itemLinkerManager;
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -38,7 +35,7 @@ public class PlayerActionListener implements Listener {
         Vector direction = clickedPosition.subtract(playerLocation.toVector());
         Vector3f impulse = new Vector3f((float) direction.getX(), (float) direction.getY(), (float) direction.getZ());
 
-        impulse.scale(5);
+        impulse.scale(1);
 
         org.joml.Vector3f impulseJoml = new org.joml.Vector3f(impulse.x, impulse.y, impulse.z);
         org.joml.Vector3f clickedPositionJoml = new org.joml.Vector3f((float) clickedPosition.getX(), (float) clickedPosition.getY(), (float) clickedPosition.getZ());
@@ -59,7 +56,7 @@ public class PlayerActionListener implements Listener {
         Vector direction = playerDirection.subtract(clickedPosition);
         Vector3f impulse = new Vector3f((float) direction.getX(), (float) direction.getY(), (float) direction.getZ());
 
-        impulse.scale(5);
+        impulse.scale(1);
 
         org.joml.Vector3f impulseJoml = new org.joml.Vector3f(impulse.x, impulse.y, impulse.z);
         org.joml.Vector3f clickedPositionJoml = new org.joml.Vector3f((float) clickedPosition.getX(), (float) clickedPosition.getY(), (float) clickedPosition.getZ());

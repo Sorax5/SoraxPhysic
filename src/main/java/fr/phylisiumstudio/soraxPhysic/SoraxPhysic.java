@@ -22,13 +22,10 @@ public final class SoraxPhysic extends JavaPlugin {
 
     private PaperCommandManager commandManager;
     private PhysicsManager physicsManager;
-    private ItemLinkerManager itemLinkerManager;
 
     @Override
     public void onEnable() {
         instance = this;
-
-        this.itemLinkerManager = new ItemLinkerManager();
 
         setupPhysics();
         setupCommands();
@@ -53,7 +50,6 @@ public final class SoraxPhysic extends JavaPlugin {
         commandManager = new PaperCommandManager(this);
         commandManager.enableUnstableAPI("help");
         commandManager.registerDependency(PhysicsManager.class, physicsManager);
-        commandManager.registerDependency(ItemLinkerManager.class, itemLinkerManager);
         commandManager.registerDependency(SessionManager.class, WorldEdit.getInstance().getSessionManager());
 
         commandManager.registerCommand(new PhysicsCommands());
@@ -82,7 +78,7 @@ public final class SoraxPhysic extends JavaPlugin {
 
     private void setupListeners() {
         getServer().getPluginManager().registerEvents(new WorldListener(physicsManager), this);
-        getServer().getPluginManager().registerEvents(new PlayerActionListener(physicsManager, this.itemLinkerManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerActionListener(physicsManager), this);
         getServer().getPluginManager().registerEvents(new RigidbodyListener(physicsManager, getServer()), this);
     }
 
