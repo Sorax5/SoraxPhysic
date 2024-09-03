@@ -89,4 +89,12 @@ public final class SoraxPhysic extends JavaPlugin {
     public static SoraxPhysic getInstance() {
         return instance;
     }
+
+    /**
+     * Get the physics manager
+     * @return the physics manager
+     */
+    public PhysicsManager getPhysicsManager() {
+        return physicsManager;
+    }
 }
