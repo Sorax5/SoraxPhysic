@@ -8,6 +8,7 @@ import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.constraintsolver.*;
 import fr.phylisiumstudio.bullet.BulletWorldPhysics;
+import fr.phylisiumstudio.logic.ThreadManager;
 import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.*;
@@ -17,20 +18,17 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class PhysicsManager {
     private final List<WorldPhysics> worlds;
+    private final ThreadManager threadManager;
+    public static final Object lock = new Object();
+    private final Logger logger = LoggerFactory.getLogger(PhysicsManager.class);
 
     private boolean timeFreeze = false;
-
     private boolean running = true;
 
-    private final ExecutorService executorService;
-    public static final Object lock = new Object();
-
-    private final Logger logger = LoggerFactory.getLogger(PhysicsManager.class);
 
     /**
      * Create a new physics manager
@@ -38,29 +36,40 @@ public class PhysicsManager {
     public PhysicsManager() {
         this.worlds = new ArrayList<>();
 
-        this.executorService = Executors.newSingleThreadExecutor();
-        this.executorService.submit(this::runPhysics);
+        int maxThreads = Runtime.getRuntime().availableProcessors();
+        this.threadManager = new ThreadManager(maxThreads);
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(SoraxPhysic.getInstance(), this::checkInactiveWorlds, 0L, 100L);
     }
 
-    private void runPhysics() {
-        while (running) {
-            try {
+    private void checkInactiveWorlds() {
+        synchronized (lock) {
+            for (WorldPhysics worldPhysics : worlds) {
+                World world = Bukkit.getWorld(worldPhysics.getUniqueId());
+                if (world != null && world.getPlayers().isEmpty()) {
+                    stopWorldPhysics(worldPhysics);
+                } else if (world != null && !world.getPlayers().isEmpty()) {
+                    startWorldPhysics(worldPhysics);
+                }
+            }
+        }
+    }
+
+    private void runWorldPhysics(WorldPhysics worldPhysics) {
+        try {
+            while (running && !Thread.currentThread().isInterrupted()) {
                 synchronized (lock) {
                     if (!timeFreeze) {
-                        for (WorldPhysics world : this.worlds) {
-                            world.stepSimulation();
-                        }
+                        worldPhysics.stepSimulation();
                     }
                 }
                 Thread.sleep(Duration.ofMillis(50));
-            } catch (InterruptedException e) {
-                logger.info("Physics thread interrupted");
-                running = false;
-                Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                running = false;
-                logger.error("Error in physics thread", e);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.info("Physics thread interrupted for world: " + worldPhysics.getUniqueId());
+        } catch (Exception e) {
+            logger.error("Error in world physics thread", e);
         }
     }
 
@@ -71,18 +80,23 @@ public class PhysicsManager {
      */
     public WorldPhysics registerWorld(World world) {
         synchronized (lock) {
+            if (world == null) {
+                throw new IllegalArgumentException("The world or its UID is null");
+            }
+
             if (getWorldPhysics(world.getUID()) != null) {
                 throw new IllegalArgumentException("The world is already managed by the physics engine");
             }
+
             BroadphaseInterface broadphase = new DbvtBroadphase();
             CollisionConfiguration collisionConfiguration = new DefaultCollisionConfiguration();
             CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);
             ConstraintSolver solver = new SequentialImpulseConstraintSolver();
             DiscreteDynamicsWorld dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
 
-
             WorldPhysics worldPhysics = new BulletWorldPhysics(world, dynamicsWorld);
             worlds.add(worldPhysics);
+
             return worldPhysics;
         }
     }
@@ -98,6 +112,35 @@ public class PhysicsManager {
                 worldPhysics.clear();
                 worlds.remove(worldPhysics);
             }
+        }
+    }
+
+    /**
+     * Start the physics simulation for a world if it's not already running
+     * @param worldPhysics The WorldPhysics instance to start
+     */
+    private void startWorldPhysics(WorldPhysics worldPhysics) {
+        synchronized (lock) {
+            UUID worldId = worldPhysics.getUniqueId();
+            if (threadManager.isTaskRunning(worldId)) {
+                return;
+            }
+
+            threadManager.submitTask(worldId, () -> runWorldPhysics(worldPhysics));
+        }
+    }
+
+    /**
+     * Stop the physics simulation for a world
+     * @param worldPhysics The WorldPhysics instance to stop
+     */
+    private void stopWorldPhysics(WorldPhysics worldPhysics) {
+        synchronized (lock) {
+            UUID worldId = worldPhysics.getUniqueId();
+            if (!threadManager.isTaskRunning(worldId)) {
+                return;
+            }
+            threadManager.cancelTask(worldId);
         }
     }
 
@@ -166,7 +209,7 @@ public class PhysicsManager {
      */
     public void stop() {
         running = false;
-        executorService.shutdown();
+        threadManager.shutdown();
     }
 
 }

@@ -151,6 +151,7 @@ public class BulletWorldPhysics extends WorldPhysics {
     @Override
     public RigidBlock createSphere(Location location, BlockData data, float radius, float mass) {
         assert location.getWorld().equals(bukkitWorld);
+        float length = (float) (radius * Math.sqrt(2));
 
         BlockDisplay blockDisplay = bukkitWorld.spawn(location, BlockDisplay.class, display -> {
             display.setBlock(data);
@@ -158,16 +159,14 @@ public class BulletWorldPhysics extends WorldPhysics {
             display.setInterpolationDuration(1);
             display.setTeleportDuration(1);
 
-            float length = (float) (radius * Math.sqrt(2));
-
             Transformation transformation = display.getTransformation();
             org.joml.Vector3f translation = new org.joml.Vector3f(-length/2, -length/2, -length/2);
             org.joml.Vector3f scale = new org.joml.Vector3f(length, length, length);
             display.setTransformation(new Transformation(translation, transformation.getLeftRotation(), scale, transformation.getRightRotation()));
         });
         Interaction hitbox = bukkitWorld.spawn(location, Interaction.class, display -> {
-            display.setInteractionHeight(radius);
-            display.setInteractionWidth(radius);
+            display.setInteractionHeight(length);
+            display.setInteractionWidth(length);
             display.setResponsive(true);
         });
         SphereShape sphereShape = new SphereShape(radius);
