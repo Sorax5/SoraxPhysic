@@ -10,12 +10,10 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import fr.phylisiumstudio.logic.WorldPhysics;
-import fr.phylisiumstudio.soraxPhysic.BukkitMotionState;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -28,6 +26,10 @@ import javax.vecmath.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class BulletWorldPhysics extends WorldPhysics {
 
@@ -247,24 +249,38 @@ public class BulletWorldPhysics extends WorldPhysics {
         int endZ = (int) Math.max(pos1.z, pos2.z);
 
         CompoundShape compoundShape = new CompoundShape();
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        List<Future<Void>> futures = new ArrayList<>();
 
         for (int x = startX; x <= endX; x++) {
             for (int y = startY; y <= endY; y++) {
                 for (int z = startZ; z <= endZ; z++) {
-                    Vector3f blockPos = new Vector3f(x, y, z);
-                    Material blockType = bukkitWorld.getBlockAt(x, y, z).getType();
+                    final int fx = x;
+                    final int fy = y;
+                    final int fz = z;
+                    futures.add(executor.submit(() -> {
+                        Block block = bukkitWorld.getBlockAt(fx, fy, fz);
+                        if (block.getType().isAir()) return null;
+                        Vector3f blockPos = new Vector3f(fx, fy, fz);
 
-                    if (blockType.isSolid()) {
-                        if (isAirBlock(x + 1, y, z)) addFace(compoundShape, blockPos, new Vector3f(1, 0, 0));  // Face droite
-                        if (isAirBlock(x - 1, y, z)) addFace(compoundShape, blockPos, new Vector3f(-1, 0, 0)); // Face gauche
-                        if (isAirBlock(x, y + 1, z)) addFace(compoundShape, blockPos, new Vector3f(0, 1, 0));  // Face supérieure
-                        if (isAirBlock(x, y - 1, z)) addFace(compoundShape, blockPos, new Vector3f(0, -1, 0)); // Face inférieure
-                        if (isAirBlock(x, y, z + 1)) addFace(compoundShape, blockPos, new Vector3f(0, 0, 1));  // Face avant
-                        if (isAirBlock(x, y, z - 1)) addFace(compoundShape, blockPos, new Vector3f(0, 0, -1)); // Face arrière
-                    }
+                        synchronized (compoundShape) {
+                            addBlock(compoundShape, blockPos);
+                        }
+                        return null;
+                    }));
                 }
             }
         }
+
+        for (Future<Void> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        executor.shutdown();
 
         Transform transform = new Transform();
         transform.setIdentity();
@@ -336,22 +352,14 @@ public class BulletWorldPhysics extends WorldPhysics {
     }
 
 
-    private void addFace(CompoundShape compoundShape, Vector3f blockPos, Vector3f normal) {
+    private void addBlock(CompoundShape compoundShape, Vector3f blockPos) {
         Vector3f halfExtents = new Vector3f(0.5f, 0.5f, 0.5f);
         BoxShape boxShape = new BoxShape(halfExtents);
 
-        Vector3f facePos = new Vector3f(blockPos);
-        facePos.add(normal);
+        Transform transform = new Transform();
+        transform.setIdentity();
+        transform.origin.set(new Vector3f(blockPos.x + 0.5f, blockPos.y + 0.5f, blockPos.z + 0.5f));
 
-        Transform faceTransform = new Transform();
-        faceTransform.setIdentity();
-        faceTransform.origin.set(facePos);
-        compoundShape.addChildShape(faceTransform, boxShape);
+        compoundShape.addChildShape(transform, boxShape);
     }
-
-    private boolean isAirBlock(int x, int y, int z) {
-        return bukkitWorld.getBlockAt(x, y, z).getType().equals(Material.AIR);
-    }
-
-
 }
