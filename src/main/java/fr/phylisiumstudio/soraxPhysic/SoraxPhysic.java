@@ -1,40 +1,39 @@
 package fr.phylisiumstudio.soraxPhysic;
 
-import co.aikar.commands.PaperCommandManager;
 import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.session.SessionManager;
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import fr.phylisiumstudio.soraxPhysic.commands.PhysicsCommands;
 import fr.phylisiumstudio.soraxPhysic.listeners.RigidbodyListener;
 import fr.phylisiumstudio.soraxPhysic.listeners.PlayerActionListener;
 import fr.phylisiumstudio.soraxPhysic.listeners.WorldListener;
-import org.bstats.bukkit.Metrics;
-import org.bstats.charts.SimplePie;
-import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.Arrays;
-import java.util.List;
 
 public final class SoraxPhysic extends JavaPlugin {
 
     private static SoraxPhysic instance;
-
-    private PaperCommandManager commandManager;
     private PhysicsManager physicsManager;
 
     @Override
-    public void onEnable() {
-        instance = this;
+    public void onLoad() {
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).verboseOutput(true));
 
         setupPhysics();
         setupCommands();
+    }
+
+    @Override
+    public void onEnable() {
+        CommandAPI.onEnable();
+        instance = this;
+
         setupListeners();
         setupBstats();
     }
 
     @Override
     public void onDisable() {
+        CommandAPI.onDisable();
         this.physicsManager.clear();
         this.physicsManager.stop();
     }
@@ -42,34 +41,12 @@ public final class SoraxPhysic extends JavaPlugin {
     private void setupBstats(){
         int pluginId = 23021;
         Metrics metrics = new Metrics(this, pluginId);
-        metrics.addCustomChart(new SimplePie("used_worldedit_version", WorldEdit::getVersion));
-        metrics.addCustomChart(new SimplePie("used_physics_version", () -> this.getPluginMeta().getVersion()));
+        metrics.addCustomChart(new Metrics.SimplePie("used_worldedit_version", WorldEdit::getVersion));
+        metrics.addCustomChart(new Metrics.SimplePie("used_physics_version", () -> this.getPluginMeta().getVersion()));
     }
 
     private void setupCommands(){
-        commandManager = new PaperCommandManager(this);
-        commandManager.enableUnstableAPI("help");
-        commandManager.registerDependency(PhysicsManager.class, physicsManager);
-        commandManager.registerDependency(SessionManager.class, WorldEdit.getInstance().getSessionManager());
-
-        commandManager.registerCommand(new PhysicsCommands());
-
-        commandManager.getCommandCompletions().registerAsyncCompletion("blocks", c -> {
-            return List.of(Arrays.stream(Material.values()).filter(Material::isBlock).map(m -> m.name().toLowerCase()).toArray(String[]::new));
-        });
-        commandManager.getCommandContexts().registerContext(Material.class, c -> {
-            Material material;
-
-            for (String arg : c.getArgs()) {
-                try {
-                    material = Material.valueOf(arg.toUpperCase());
-                    return material;
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
-
-            throw new IllegalArgumentException("Invalid material");
-        });
+        PhysicsCommands physicsCommands = new PhysicsCommands(physicsManager, WorldEdit.getInstance().getSessionManager());
     }
 
     private void setupPhysics() {

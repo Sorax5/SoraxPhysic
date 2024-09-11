@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id "io.github.goooler.shadow" version "8.1.7"
+    id "com.gradleup.shadow" version "8.3.1"
 }
 
 group = 'fr.phylisiumstudio'
@@ -16,17 +16,16 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
-    maven { url = "https://repo.aikar.co/content/groups/aikar/" }
     maven { url = "https://maven.enginehub.org/repo/" }
+    maven { url = "https://repo.codemc.org/repository/maven-public/" }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.0-SNAPSHOT")
 
-    implementation 'cz.advel.jbullet:jbullet:20101010-1'
-    implementation "co.aikar:acf-paper:0.5.1-SNAPSHOT"
-    implementation "org.bstats:bstats-bukkit:3.0.2"
+    implementation "dev.jorel:commandapi-bukkit-shade:9.5.0"
+    implementation "cz.advel.jbullet:jbullet:20101010-1"
 }
 
 def targetJavaVersion = 21
@@ -58,16 +57,8 @@ processResources {
     }
 }
 
-jar {
-    destinationDirectory.set(file("./builds/"))
-}
-
 shadowJar {
-    destinationDirectory.set(file("./builds/"))
-
-    relocate 'co.aikar.commands', 'fr.phylisiumstudio.acf'
-    relocate 'co.aikar.locales', 'fr.phylisiumstudio.locales'
-    relocate 'org.bstats', 'fr.phylisiumstudio.bstats'
+    relocate("dev.jorel.commandapi", "fr.phylisiumstudio.commandapi")
 }
 
 build.dependsOn shadowJar
