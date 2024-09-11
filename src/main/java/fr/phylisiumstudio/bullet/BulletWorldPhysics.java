@@ -25,6 +25,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Interaction;
@@ -300,48 +301,73 @@ public class BulletWorldPhysics extends WorldPhysics {
 
     @Override
     public void convertChunk(Vector3f pos1, Vector3f pos2) {
+        CompoundShape compoundShape = new CompoundShape();
+        final int numThreads = Runtime.getRuntime().availableProcessors();
+
         int startX = (int) Math.min(pos1.x, pos2.x);
-        int endX = (int) Math.max(pos1.x, pos2.x);
         int startZ = (int) Math.min(pos1.z, pos2.z);
+        int startY = (int) Math.min(pos1.y, pos2.y);
+
+        int endX = (int) Math.max(pos1.x, pos2.x);
         int endZ = (int) Math.max(pos1.z, pos2.z);
+        int endY = (int) Math.max(pos1.y, pos2.y);
 
-        Set<Vector3f> uniqueVertices = new HashSet<>();
+        try (ExecutorService executor = Executors.newFixedThreadPool(numThreads)) {
+            List<Future<Void>> futures = new ArrayList<>();
 
-        // Find the surface blocks in the chunk and collect their unique vertices
-        for (int x = startX; x <= endX; x++) {
-            for (int z = startZ; z <= endZ; z++) {
-                for (int y = bukkitWorld.getMaxHeight() - 1; y >= 0; y--) {
-                    Block block = bukkitWorld.getBlockAt(x, y, z);
-                    if (!block.getType().isAir() && isAdjacentToAir(x, y, z)) {
-                        addBlockVertices(uniqueVertices, new Vector3f(x, y, z));
+            // Divide the work into smaller tasks
+            for (int x = startX; x < endX; x++) {
+                final int currentX = x;
+                Future<Void> future = executor.submit(() -> {
+                    for (int z = startZ; z < endZ; z++) {
+                        for (int y = startY; y < endY; y++) {
+                            Block block = bukkitWorld.getBlockAt(currentX, y, z);
+                            if (block.getType().isAir() || !isAdjacentToAir(block)) {
+                                continue;
+                            }
+                            BoxShape blockShape = new BoxShape(new Vector3f(0.5f, 0.5f, 0.5f));
+                            Transform transformShape = new Transform();
+                            transformShape.setIdentity();
+                            transformShape.origin.set(new Vector3f(currentX + 0.5f, y + 0.5f, z + 0.5f));
+
+                            synchronized (compoundShape) {
+                                compoundShape.addChildShape(transformShape, blockShape);
+                            }
+                        }
                     }
+                    return null;
+                });
+                futures.add(future);
+            }
+
+            // Wait for all tasks to complete
+            for (Future<Void> future : futures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
+
+            // Create and add the CompoundShape to the dynamics world
+            if (compoundShape.getNumChildShapes() > 0) {
+                RigidBody rigidBody = createStaticRigidBody(compoundShape);
+                bulletWorld.addRigidBody(rigidBody);
+            }
+        } catch (Exception e) {
+            logger.error("Error creating executor service: " + e.getMessage(), e);
         }
+    }
 
-        // Merge adjacent blocks into larger quads
-        Set<Vector3f> mergedVertices = mergeAdjacentBlocks(uniqueVertices);
-        ObjectArrayList<Vector3f> vertices = new ObjectArrayList<>(mergedVertices.size());
-        vertices.addAll(mergedVertices);
-
-        // Create a convex hull shape using the collected unique vertices
-        ConvexHullShape convexHullShape = new ConvexHullShape(vertices);
-
-        // Create a compound shape and add the convex hull shape to it
-        CompoundShape compoundShape = new CompoundShape();
-        Transform transform = new Transform();
-        transform.setIdentity();
-        compoundShape.addChildShape(transform, convexHullShape);
-
-        // Create a rigid body with the compound shape
+    private RigidBody createStaticRigidBody(CompoundShape compoundShape) {
         float mass = 0.0f;
         Vector3f inertia = new Vector3f(0, 0, 0);
-        DefaultMotionState motionState = new DefaultMotionState(transform);
-        RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, motionState, compoundShape, inertia);
-        RigidBody body = new RigidBody(rbInfo);
-
-        // Add the rigid body to the physics world
-        bulletWorld.addRigidBody(body);
+        RigidBodyConstructionInfo chunkInfo = new RigidBodyConstructionInfo(mass, null, compoundShape, inertia);
+        RigidBody groundBlock = new RigidBody(chunkInfo);
+        Transform ntransform = new Transform();
+        ntransform.setIdentity();
+        groundBlock.setWorldTransform(ntransform);
+        return groundBlock;
     }
 
     /**
@@ -410,84 +436,12 @@ public class BulletWorldPhysics extends WorldPhysics {
         return !bukkitWorld.getPlayers().isEmpty();
     }
 
-    private boolean isAdjacentToAir(int x, int y, int z) {
-        return bukkitWorld.getBlockAt(x + 1, y, z).getType().isAir() ||
-                bukkitWorld.getBlockAt(x - 1, y, z).getType().isAir() ||
-                bukkitWorld.getBlockAt(x, y + 1, z).getType().isAir() ||
-                bukkitWorld.getBlockAt(x, y - 1, z).getType().isAir() ||
-                bukkitWorld.getBlockAt(x, y, z + 1).getType().isAir() ||
-                bukkitWorld.getBlockAt(x, y, z - 1).getType().isAir();
-    }
-
-    private void addBlockVertices(Set<Vector3f> vertices, Vector3f blockPos) {
-        float x = blockPos.x;
-        float y = blockPos.y;
-        float z = blockPos.z;
-
-        // Add the 8 vertices of the block
-        vertices.add(new Vector3f(x, y, z));
-        vertices.add(new Vector3f(x + 1, y, z));
-        vertices.add(new Vector3f(x, y + 1, z));
-        vertices.add(new Vector3f(x, y, z + 1));
-        vertices.add(new Vector3f(x + 1, y + 1, z));
-        vertices.add(new Vector3f(x, y + 1, z + 1));
-        vertices.add(new Vector3f(x + 1, y, z + 1));
-        vertices.add(new Vector3f(x + 1, y + 1, z + 1));
-    }
-
-    private Set<Vector3f> mergeAdjacentBlocks(Set<Vector3f> vertices) {
-        int chunkWidth = 16;
-        int chunkHeight = 256;
-        int chunkDepth = 16;
-
-        boolean[][][] grid = new boolean[chunkWidth][chunkHeight][chunkDepth];
-
-        // Mark the grid cells corresponding to surface blocks
-        for (Vector3f vertex : vertices) {
-            int x = (int) vertex.x;
-            int y = (int) vertex.y;
-            int z = (int) vertex.z;
-            if (x >= 0 && x < chunkWidth && y >= 0 && y < chunkHeight && z >= 0 && z < chunkDepth) {
-                grid[x][y][z] = true;
+    private boolean isAdjacentToAir(Block block) {
+        for (BlockFace face : BlockFace.values()) {
+            if (block.getRelative(face).getType().isAir()) {
+                return true;
             }
         }
-
-        Set<Vector3f> mergedVertices = new HashSet<>();
-
-        // Greedy meshing algorithm
-        for (int x = 0; x < chunkWidth; x++) {
-            for (int y = 0; y < chunkHeight; y++) {
-                for (int z = 0; z < chunkDepth; z++) {
-                    if (grid[x][y][z]) {
-                        // Find the extent of the quad in the x direction
-                        int width = 1;
-                        while (x + width < chunkWidth && grid[x + width][y][z]) {
-                            width++;
-                        }
-
-                        // Find the extent of the quad in the z direction
-                        int depth = 1;
-                        while (z + depth < chunkDepth && grid[x][y][z + depth]) {
-                            depth++;
-                        }
-
-                        // Add the vertices of the quad
-                        mergedVertices.add(new Vector3f(x, y, z));
-                        mergedVertices.add(new Vector3f(x + width, y, z));
-                        mergedVertices.add(new Vector3f(x, y, z + depth));
-                        mergedVertices.add(new Vector3f(x + width, y, z + depth));
-
-                        // Mark the cells as processed
-                        for (int i = 0; i < width; i++) {
-                            for (int j = 0; j < depth; j++) {
-                                grid[x + i][y][z + j] = false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return mergedVertices;
+        return false;
     }
 }

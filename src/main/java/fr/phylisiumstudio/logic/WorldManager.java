@@ -1,5 +1,7 @@
 package fr.phylisiumstudio.logic;
 
+import org.slf4j.Logger;
+
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -10,9 +12,12 @@ import java.util.concurrent.ConcurrentMap;
 public class WorldManager {
     private final ConcurrentMap<UUID, WorldPhysics> worlds;
     private final PhysicsThreadManager physicsThreadManager;
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(WorldManager.class);
 
     public WorldManager() {
         this.worlds = new ConcurrentHashMap<>();
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        logger.info("Available processors: {}", availableProcessors);
         this.physicsThreadManager = new PhysicsThreadManager(Runtime.getRuntime().availableProcessors());
     }
 

@@ -12,6 +12,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Runnable task for physics simulation
@@ -20,6 +22,8 @@ public class PhysicsThreadRunnable implements Runnable {
     private final UUID id = UUID.randomUUID();
     private final List<WorldPhysics> worldPhysics;
     private final Logger logger = LoggerFactory.getLogger(PhysicsThreadRunnable.class);
+
+    private final Lock lock = new ReentrantLock();
 
     /**
      * Create a new physics task
@@ -31,19 +35,23 @@ public class PhysicsThreadRunnable implements Runnable {
     @Override
     public void run() {
         try {
+            lock.lock();
             Instant start = Instant.now();
             for (WorldPhysics worldPhysic : this.worldPhysics) {
                 worldPhysic.stepSimulation();
             }
             Instant end = Instant.now();
             Duration duration = Duration.between(start, end);
-            if (duration.toMillis() > 50) {
+            if (duration.toMillis() > 100) {
                 logger.warn("PhysicsTask #" + id + " is running slow: " + duration.toMillis() + "ms");
             }
         } catch (NullPointerException e) {
             logger.error("NullPointerException in world physics thread #" + id, e);
         } catch (Exception e) {
             logger.error("Error in world physics thread #" + id, e);
+        }
+        finally {
+            lock.unlock();
         }
     }
 
