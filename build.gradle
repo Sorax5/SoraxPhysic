@@ -57,17 +57,7 @@ processResources {
     }
 }
 
-jar {
-    destinationDirectory.set(file("./builds/"))
-}
-
 shadowJar {
-    destinationDirectory.set(file("./builds/"))
-
-    dependencies {
-        include dependency("dev.jorel:commandapi-bukkit-shade:9.5.0")
-    }
-
     relocate("dev.jorel.commandapi", "fr.phylisiumstudio.commandapi")
 }
 

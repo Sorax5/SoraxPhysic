@@ -325,7 +325,7 @@ public class BulletWorldPhysics extends WorldPhysics {
                             if (block.getType().isAir() || !isAdjacentToAir(block)) {
                                 continue;
                             }
-                            BoxShape blockShape = new BoxShape(new Vector3f(0.5f, 0.5f, 0.5f));
+                            BoxShape blockShape = new BoxShape(new Vector3f(1/2f, 1/2f, 1/2f));
                             Transform transformShape = new Transform();
                             transformShape.setIdentity();
                             transformShape.origin.set(new Vector3f(currentX + 0.5f, y + 0.5f, z + 0.5f));

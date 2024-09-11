@@ -192,15 +192,9 @@ public class PhysicsCommands {
 
     private Argument<Material> customMaterialArgument(String nodename) {
         return new CustomArgument<Material, String>(new StringArgument(nodename), (info) ->{
-            Material material = Material.getMaterial(info.input());
-
-            if (material == null) {
-                throw CustomArgument.CustomArgumentException.fromMessageBuilder(new CustomArgument.MessageBuilder("Invalid material").appendArgInput());
-            }
-
-            return material;
+            return Material.valueOf(info.input().toUpperCase());
         }).replaceSuggestions(ArgumentSuggestions.strings(info ->{
-            return Stream.of(Material.values()).map(Material::name).toArray(String[]::new);
+            return Stream.of(Material.values()).filter(Material::isBlock).filter(Material::isSolid).map(m -> m.name().toLowerCase()).toArray(String[]::new);
         }));
     }
 }
