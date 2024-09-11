@@ -5,7 +5,8 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.session.SessionManager;
 import fr.phylisiumstudio.soraxPhysic.commands.PhysicsCommands;
 import fr.phylisiumstudio.soraxPhysic.listeners.RigidbodyListener;
-import fr.phylisiumstudio.soraxPhysic.listeners.ToolsListener;
+import fr.phylisiumstudio.soraxPhysic.listeners.PlayerActionListener;
+import fr.phylisiumstudio.soraxPhysic.listeners.WorldListener;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Material;
@@ -21,22 +22,20 @@ public final class SoraxPhysic extends JavaPlugin {
 
     private PaperCommandManager commandManager;
     private PhysicsManager physicsManager;
-    private ItemLinkerManager itemLinkerManager;
 
     @Override
     public void onEnable() {
         instance = this;
 
-        this.itemLinkerManager = new ItemLinkerManager();
-
         setupPhysics();
         setupCommands();
         setupListeners();
+        setupBstats();
     }
 
     @Override
     public void onDisable() {
-        this.physicsManager.clearAll();
+        this.physicsManager.clear();
         this.physicsManager.stop();
     }
 
@@ -51,7 +50,6 @@ public final class SoraxPhysic extends JavaPlugin {
         commandManager = new PaperCommandManager(this);
         commandManager.enableUnstableAPI("help");
         commandManager.registerDependency(PhysicsManager.class, physicsManager);
-        commandManager.registerDependency(ItemLinkerManager.class, itemLinkerManager);
         commandManager.registerDependency(SessionManager.class, WorldEdit.getInstance().getSessionManager());
 
         commandManager.registerCommand(new PhysicsCommands());
@@ -75,16 +73,24 @@ public final class SoraxPhysic extends JavaPlugin {
     }
 
     private void setupPhysics() {
-        World world = getServer().getWorlds().get(0);
-        physicsManager = new PhysicsManager(world);
+        physicsManager = new PhysicsManager();
     }
 
     private void setupListeners() {
-        getServer().getPluginManager().registerEvents(new ToolsListener(physicsManager, this.itemLinkerManager), this);
+        getServer().getPluginManager().registerEvents(new WorldListener(physicsManager), this);
+        getServer().getPluginManager().registerEvents(new PlayerActionListener(physicsManager), this);
         getServer().getPluginManager().registerEvents(new RigidbodyListener(physicsManager, getServer()), this);
     }
 
     public static SoraxPhysic getInstance() {
         return instance;
+    }
+
+    /**
+     * Get the physics manager
+     * @return the physics manager
+     */
+    public PhysicsManager getPhysicsManager() {
+        return physicsManager;
     }
 }

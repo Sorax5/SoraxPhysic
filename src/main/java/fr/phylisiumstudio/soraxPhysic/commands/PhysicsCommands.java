@@ -3,39 +3,20 @@ package fr.phylisiumstudio.soraxPhysic.commands;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
-import com.bulletphysics.dynamics.RigidBody;
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.IncompleteRegionException;
-import com.sk89q.worldedit.LocalSession;
-import com.sk89q.worldedit.MaxChangedBlocksException;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.SessionManager;
-import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.block.BlockState;
-import fr.phylisiumstudio.soraxPhysic.ItemLinkerManager;
+import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.vecmath.Vector3f;
 
 @CommandAlias("physics")
 @Description("Physics related commands")
 public class PhysicsCommands extends BaseCommand {
     @Dependency
     private PhysicsManager physicsManager;
-
-    @Dependency
-    private ItemLinkerManager itemLinkerManager;
 
     @Dependency
     private SessionManager sessionManager;
@@ -48,7 +29,7 @@ public class PhysicsCommands extends BaseCommand {
         @Description("Create a box shape")
         @CommandPermission("physics.create.box")
         public void createBox(Player sender, Material block, float mass, float xscale, float yscale, float zscale){
-            physicsManager.createBoxShape(sender.getEyeLocation(), block, mass, xscale, yscale, zscale);
+            physicsManager.createBox(sender.getEyeLocation(), block.createBlockData(), mass, xscale, yscale, zscale);
             sender.sendMessage("Box created");
         }
 
@@ -57,11 +38,11 @@ public class PhysicsCommands extends BaseCommand {
         @Description("Create a sphere shape")
         @CommandPermission("physics.create.sphere")
         public void createSphere(Player sender, Material block, float mass, float radius){
-            physicsManager.createsphereShape(sender.getEyeLocation(), block, mass, radius);
+            physicsManager.createSphere(sender.getEyeLocation(), block.createBlockData(), mass, radius);
             sender.sendMessage("Sphere created");
         }
 
-        @Subcommand("convert")
+        /*@Subcommand("convert")
         @Description("Convert the WorldEdit selection to physics shapes (beta feature do not use if you don't know what you are doing)")
         @CommandPermission("physics.create.convert")
         public void convertSelection(Player player, float impulse, float damping, float tau){
@@ -124,32 +105,32 @@ public class PhysicsCommands extends BaseCommand {
             }
 
             player.sendMessage("Selection converted");
-        }
-    }
-
-    @Subcommand("tools")
-    @Description("Don't work for the moment")
-    private class ToolsCommands extends BaseCommand {
-        @Subcommand("linker")
-        public void createLinker(Player sender){
-            ItemStack linker = itemLinkerManager.CreateLinker(sender.getUniqueId());
-            sender.getInventory().addItem(linker);
-        }
+        }*/
     }
 
     @Subcommand("clear")
     @Description("Clear all shapes in the physics engine")
     @CommandPermission("physics.clear")
     public void clearShapes(Player sender){
-        physicsManager.clearAll();
-        sender.sendMessage("Shapes cleared");
+        WorldPhysics worldPhysics = physicsManager.getWorldPhysics(sender.getWorld().getUID());
+        if(worldPhysics == null){
+            throw new IllegalArgumentException("The world is not managed by the physics engine");
+        }
+        worldPhysics.clear();
+        sender.sendMessage("Shapes cleared for the world " + sender.getWorld().getName());
     }
 
     @Subcommand("freeze")
     @Description("Freeze the time in the physics engine")
     @CommandPermission("physics.freeze")
     public void freezeTime(Player sender){
-        physicsManager.setTimeFreeze(!physicsManager.isTimeFreeze());
+        WorldPhysics worldPhysics = physicsManager.getWorldPhysics(sender.getWorld().getUID());
+        if(worldPhysics == null){
+            throw new IllegalArgumentException("The world is not managed by the physics engine");
+        }
+        boolean freeze = !worldPhysics.isFrozen();
+        worldPhysics.setFreeze(freeze);
+        sender.sendMessage("Time " + (freeze ? "frozen" : "unfrozen") + " for the world " + sender.getWorld().getName());
     }
 
     @Subcommand("timespan")
@@ -157,8 +138,12 @@ public class PhysicsCommands extends BaseCommand {
     @Description("Set the timespan for the physics engine (do not touch if you don't know what you are doing)")
     @CommandPermission("physics.timespan")
     public void setTimeSpan(Player sender, float timespan){
-        physicsManager.setTimespan(timespan);
-        sender.sendMessage("Timespan set to " + timespan);
+        WorldPhysics worldPhysics = physicsManager.getWorldPhysics(sender.getWorld().getUID());
+        if(worldPhysics == null){
+            throw new IllegalArgumentException("The world is not managed by the physics engine");
+        }
+        worldPhysics.setTimespan(timespan);
+        sender.sendMessage("Timespan set to " + timespan + "s for the world " + sender.getWorld().getName());
     }
 
     @Subcommand("substeps")
@@ -166,15 +151,25 @@ public class PhysicsCommands extends BaseCommand {
     @Description("Set the number of substeps for the physics engine (do not touch if you don't know what you are doing)")
     @CommandPermission("physics.substeps")
     public void setMaxSubSteps(Player sender, int maxSubSteps){
-        physicsManager.setMaxSubSteps(maxSubSteps);
-        sender.sendMessage("Max substeps set to " + maxSubSteps);
+        WorldPhysics worldPhysics = physicsManager.getWorldPhysics(sender.getWorld().getUID());
+        if(worldPhysics == null){
+            throw new IllegalArgumentException("The world is not managed by the physics engine");
+        }
+        worldPhysics.setMaxSubSteps(maxSubSteps);
+        sender.sendMessage("Max substeps set to " + maxSubSteps + " for the world " + sender.getWorld().getName());
     }
 
     @Subcommand("chunk")
     @Description("Convert the chunk where the player is standing to a physics chunk")
     @CommandPermission("physics.chunk")
     public void convertChunk(Player sender){
-        physicsManager.ConvertChunk(sender.getLocation().getChunk());
+        WorldPhysics worldPhysics = physicsManager.getWorldPhysics(sender.getWorld().getUID());
+        if(worldPhysics == null){
+            throw new IllegalArgumentException("The world is not managed by the physics engine");
+        }
+        Vector3f pos1 = new Vector3f(sender.getLocation().getBlockX(), sender.getLocation().getBlockY(), sender.getLocation().getBlockZ());
+        Vector3f pos2 = new Vector3f(sender.getLocation().getBlockX() + 16, sender.getLocation().getBlockY() + 16, sender.getLocation().getBlockZ() + 16);
+        worldPhysics.convertChunk(pos1, pos2);
         sender.sendMessage("Chunk converted");
     }
 

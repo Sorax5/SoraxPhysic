@@ -1,8 +1,9 @@
-package fr.phylisiumstudio.soraxPhysic;
+package fr.phylisiumstudio.bullet;
 
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.MotionState;
 import com.bulletphysics.linearmath.Transform;
+import fr.phylisiumstudio.soraxPhysic.SoraxPhysic;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

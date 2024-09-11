@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public class RigidBlock {
     private final UUID uniqueId;
-    private RigidBody rigidBody;
-    private BlockDisplay blockDisplay;
-    private Interaction interaction;
+    private final RigidBody rigidBody;
+    private final BlockDisplay blockDisplay;
+    private final Interaction interaction;
 
     public RigidBlock(RigidBody rigidBody, BlockDisplay blockDisplay, Interaction interaction) {
         this.rigidBody = rigidBody;
