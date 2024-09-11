@@ -1,14 +1,23 @@
 package fr.phylisiumstudio.bullet;
 
+import com.bulletphysics.collision.broadphase.BroadphaseInterface;
+import com.bulletphysics.collision.broadphase.DbvtBroadphase;
+import com.bulletphysics.collision.dispatch.CollisionConfiguration;
+import com.bulletphysics.collision.dispatch.CollisionDispatcher;
+import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.collision.shapes.BoxShape;
 import com.bulletphysics.collision.shapes.CompoundShape;
+import com.bulletphysics.collision.shapes.ConvexHullShape;
 import com.bulletphysics.collision.shapes.SphereShape;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
+import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
+import com.bulletphysics.util.ObjectArrayList;
 import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
@@ -21,19 +30,19 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Interaction;
 import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.vecmath.Vector3f;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.*;
+import java.util.concurrent.*;
 
+/**
+ * A world physics implementation using bullet physics
+ */
 public class BulletWorldPhysics extends WorldPhysics {
 
-    private final DynamicsWorld bulletWorld;
+    private DynamicsWorld bulletWorld;
     private final World bukkitWorld;
 
     private final List<RigidBlock> blocks;
@@ -42,10 +51,23 @@ public class BulletWorldPhysics extends WorldPhysics {
     private int maxSubSteps = 30;
     private boolean timeFreeze = false;
 
-    public BulletWorldPhysics(World bukkitWorld, DiscreteDynamicsWorld bulletWorld) {
-        this.bulletWorld = bulletWorld;
+    private final Logger logger = LoggerFactory.getLogger(BulletWorldPhysics.class);
+
+    public BulletWorldPhysics(World bukkitWorld) {
         this.bukkitWorld = bukkitWorld;
         this.blocks = new ArrayList<>();
+
+        try {
+            BroadphaseInterface broadphase = new DbvtBroadphase();
+            CollisionConfiguration collisionConfiguration = new DefaultCollisionConfiguration();
+            CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);
+            ConstraintSolver solver = new SequentialImpulseConstraintSolver();
+
+            this.bulletWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+            logger.info("BulletWorld for world " + bukkitWorld.getName() + " initialized");
+        } catch (Exception e) {
+            logger.error("Error initializing BulletWorld for world " + bukkitWorld.getName() + ": " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -53,8 +75,25 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     public void stepSimulation() {
+        if (!isRunning()){
+            return;
+        }
+
+        if (bulletWorld == null) {
+            logger.error("bulletWorld is null");
+            return;
+        }
+
         if (timeFreeze) return;
-        bulletWorld.stepSimulation(timespan, maxSubSteps);
+        synchronized (PhysicsManager.lock) {
+            try{
+                bulletWorld.stepSimulation(timespan, maxSubSteps);
+            }
+            catch (Exception e){
+                logger.error("Error stepping simulation: " + e.getMessage(), e);
+            }
+
+        }
     }
 
     /**
@@ -68,13 +107,23 @@ public class BulletWorldPhysics extends WorldPhysics {
     }
 
     /**
+     * Get the world name
+     *
+     * @return the world name
+     */
+    @Override
+    public String getWorldName() {
+        return bukkitWorld.getName();
+    }
+
+    /**
      * Get the blocks
      *
      * @return the blocks
      */
     @Override
     public List<RigidBlock> getBlocks() {
-        return blocks;
+        return this.blocks;
     }
 
     /**
@@ -129,9 +178,11 @@ public class BulletWorldPhysics extends WorldPhysics {
         BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
         body.setMotionState(motionState);
 
-        synchronized (PhysicsManager.lock){
+        synchronized (PhysicsManager.lock) {
             bulletWorld.addRigidBody(body);
-            blocks.add(rigidBlock);
+            synchronized (blocks) {
+                blocks.add(rigidBlock);
+            }
         }
 
         Chunk chunk = location.getChunk();
@@ -189,9 +240,11 @@ public class BulletWorldPhysics extends WorldPhysics {
         BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
         body.setMotionState(motionState);
 
-        synchronized (PhysicsManager.lock){
+        synchronized (PhysicsManager.lock) {
             bulletWorld.addRigidBody(body);
-            blocks.add(rigidBlock);
+            synchronized (blocks) {
+                blocks.add(rigidBlock);
+            }
         }
 
         Chunk chunk = location.getChunk();
@@ -209,7 +262,12 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     public void removeBlock(RigidBlock block) {
-
+        bulletWorld.removeRigidBody(block.getRigidBody());
+        block.getBlockDisplay().remove();
+        block.getInteraction().remove();
+        synchronized (blocks) {
+            blocks.remove(block);
+        }
     }
 
     /**
@@ -217,12 +275,13 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     public void clear() {
-        synchronized (PhysicsManager.lock){
+        synchronized (blocks) {
             for (RigidBlock block : blocks) {
                 bulletWorld.removeRigidBody(block.getRigidBody());
                 block.getBlockDisplay().remove();
                 block.getInteraction().remove();
             }
+            blocks.clear();
         }
     }
 
@@ -243,55 +302,45 @@ public class BulletWorldPhysics extends WorldPhysics {
     public void convertChunk(Vector3f pos1, Vector3f pos2) {
         int startX = (int) Math.min(pos1.x, pos2.x);
         int endX = (int) Math.max(pos1.x, pos2.x);
-        int startY = (int) Math.min(pos1.y, pos2.y);
-        int endY = (int) Math.max(pos1.y, pos2.y);
         int startZ = (int) Math.min(pos1.z, pos2.z);
         int endZ = (int) Math.max(pos1.z, pos2.z);
 
-        CompoundShape compoundShape = new CompoundShape();
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        List<Future<Void>> futures = new ArrayList<>();
+        Set<Vector3f> uniqueVertices = new HashSet<>();
 
+        // Find the surface blocks in the chunk and collect their unique vertices
         for (int x = startX; x <= endX; x++) {
-            for (int y = startY; y <= endY; y++) {
-                for (int z = startZ; z <= endZ; z++) {
-                    final int fx = x;
-                    final int fy = y;
-                    final int fz = z;
-                    futures.add(executor.submit(() -> {
-                        Block block = bukkitWorld.getBlockAt(fx, fy, fz);
-                        if (block.getType().isAir()) return null;
-                        Vector3f blockPos = new Vector3f(fx, fy, fz);
-
-                        synchronized (compoundShape) {
-                            addBlock(compoundShape, blockPos);
-                        }
-                        return null;
-                    }));
+            for (int z = startZ; z <= endZ; z++) {
+                for (int y = bukkitWorld.getMaxHeight() - 1; y >= 0; y--) {
+                    Block block = bukkitWorld.getBlockAt(x, y, z);
+                    if (!block.getType().isAir() && isAdjacentToAir(x, y, z)) {
+                        addBlockVertices(uniqueVertices, new Vector3f(x, y, z));
+                    }
                 }
             }
         }
 
-        for (Future<Void> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
+        // Merge adjacent blocks into larger quads
+        Set<Vector3f> mergedVertices = mergeAdjacentBlocks(uniqueVertices);
+        ObjectArrayList<Vector3f> vertices = new ObjectArrayList<>(mergedVertices.size());
+        vertices.addAll(mergedVertices);
 
-        executor.shutdown();
+        // Create a convex hull shape using the collected unique vertices
+        ConvexHullShape convexHullShape = new ConvexHullShape(vertices);
 
+        // Create a compound shape and add the convex hull shape to it
+        CompoundShape compoundShape = new CompoundShape();
         Transform transform = new Transform();
         transform.setIdentity();
+        compoundShape.addChildShape(transform, convexHullShape);
 
+        // Create a rigid body with the compound shape
         float mass = 0.0f;
         Vector3f inertia = new Vector3f(0, 0, 0);
-
         DefaultMotionState motionState = new DefaultMotionState(transform);
         RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, motionState, compoundShape, inertia);
         RigidBody body = new RigidBody(rbInfo);
 
+        // Add the rigid body to the physics world
         bulletWorld.addRigidBody(body);
     }
 
@@ -351,15 +400,94 @@ public class BulletWorldPhysics extends WorldPhysics {
         return timeFreeze;
     }
 
+    /**
+     * Verify if the world can run
+     *
+     * @return if the world can run
+     */
+    @Override
+    public boolean isRunning() {
+        return !bukkitWorld.getPlayers().isEmpty();
+    }
 
-    private void addBlock(CompoundShape compoundShape, Vector3f blockPos) {
-        Vector3f halfExtents = new Vector3f(0.5f, 0.5f, 0.5f);
-        BoxShape boxShape = new BoxShape(halfExtents);
+    private boolean isAdjacentToAir(int x, int y, int z) {
+        return bukkitWorld.getBlockAt(x + 1, y, z).getType().isAir() ||
+                bukkitWorld.getBlockAt(x - 1, y, z).getType().isAir() ||
+                bukkitWorld.getBlockAt(x, y + 1, z).getType().isAir() ||
+                bukkitWorld.getBlockAt(x, y - 1, z).getType().isAir() ||
+                bukkitWorld.getBlockAt(x, y, z + 1).getType().isAir() ||
+                bukkitWorld.getBlockAt(x, y, z - 1).getType().isAir();
+    }
 
-        Transform transform = new Transform();
-        transform.setIdentity();
-        transform.origin.set(new Vector3f(blockPos.x + 0.5f, blockPos.y + 0.5f, blockPos.z + 0.5f));
+    private void addBlockVertices(Set<Vector3f> vertices, Vector3f blockPos) {
+        float x = blockPos.x;
+        float y = blockPos.y;
+        float z = blockPos.z;
 
-        compoundShape.addChildShape(transform, boxShape);
+        // Add the 8 vertices of the block
+        vertices.add(new Vector3f(x, y, z));
+        vertices.add(new Vector3f(x + 1, y, z));
+        vertices.add(new Vector3f(x, y + 1, z));
+        vertices.add(new Vector3f(x, y, z + 1));
+        vertices.add(new Vector3f(x + 1, y + 1, z));
+        vertices.add(new Vector3f(x, y + 1, z + 1));
+        vertices.add(new Vector3f(x + 1, y, z + 1));
+        vertices.add(new Vector3f(x + 1, y + 1, z + 1));
+    }
+
+    private Set<Vector3f> mergeAdjacentBlocks(Set<Vector3f> vertices) {
+        int chunkWidth = 16;
+        int chunkHeight = 256;
+        int chunkDepth = 16;
+
+        boolean[][][] grid = new boolean[chunkWidth][chunkHeight][chunkDepth];
+
+        // Mark the grid cells corresponding to surface blocks
+        for (Vector3f vertex : vertices) {
+            int x = (int) vertex.x;
+            int y = (int) vertex.y;
+            int z = (int) vertex.z;
+            if (x >= 0 && x < chunkWidth && y >= 0 && y < chunkHeight && z >= 0 && z < chunkDepth) {
+                grid[x][y][z] = true;
+            }
+        }
+
+        Set<Vector3f> mergedVertices = new HashSet<>();
+
+        // Greedy meshing algorithm
+        for (int x = 0; x < chunkWidth; x++) {
+            for (int y = 0; y < chunkHeight; y++) {
+                for (int z = 0; z < chunkDepth; z++) {
+                    if (grid[x][y][z]) {
+                        // Find the extent of the quad in the x direction
+                        int width = 1;
+                        while (x + width < chunkWidth && grid[x + width][y][z]) {
+                            width++;
+                        }
+
+                        // Find the extent of the quad in the z direction
+                        int depth = 1;
+                        while (z + depth < chunkDepth && grid[x][y][z + depth]) {
+                            depth++;
+                        }
+
+                        // Add the vertices of the quad
+                        mergedVertices.add(new Vector3f(x, y, z));
+                        mergedVertices.add(new Vector3f(x + width, y, z));
+                        mergedVertices.add(new Vector3f(x, y, z + depth));
+                        mergedVertices.add(new Vector3f(x + width, y, z + depth));
+
+                        // Mark the cells as processed
+                        for (int i = 0; i < width; i++) {
+                            for (int j = 0; j < depth; j++) {
+                                grid[x + i][y][z + j] = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return mergedVertices;
     }
 }

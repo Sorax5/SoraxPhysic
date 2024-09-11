@@ -7,6 +7,7 @@ import org.bukkit.block.data.BlockData;
 import javax.vecmath.Vector3f;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,6 +27,12 @@ public abstract class WorldPhysics {
      * @return the unique id
      */
     public abstract UUID getUniqueId();
+
+    /**
+     * Get the world name
+     * @return the world name
+     */
+    public abstract String getWorldName();
 
     /**
      * Get the blocks
@@ -112,4 +119,10 @@ public abstract class WorldPhysics {
      * @return is frozen
      */
     public abstract boolean isFrozen();
+
+    /**
+     * Verify if the world can run
+     * @return if the world can run
+     */
+    public abstract boolean isRunning();
 }

@@ -1,5 +1,7 @@
 package fr.phylisiumstudio.soraxPhysic.listeners;
 
+import fr.phylisiumstudio.bullet.BulletWorldPhysics;
+import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,11 +17,13 @@ public class WorldListener implements Listener {
 
     @EventHandler
     public void onWorldUnload(WorldUnloadEvent event) {
-        physicsManager.unregisterWorld(event.getWorld());
+        WorldPhysics worldPhysics = physicsManager.getWorldPhysics(event.getWorld().getUID());
+        physicsManager.unregisterWorld(worldPhysics);
     }
 
     @EventHandler
     public void onWorldInit(WorldInitEvent event) {
-        physicsManager.registerWorld(event.getWorld());
+        BulletWorldPhysics worldPhysics = new BulletWorldPhysics(event.getWorld());
+        physicsManager.registerWorld(worldPhysics);
     }
 }
