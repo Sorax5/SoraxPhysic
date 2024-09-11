@@ -125,4 +125,12 @@ public abstract class WorldPhysics {
      * @return if the world can run
      */
     public abstract boolean isRunning();
+
+    /**
+     * Link two rigid blocks
+     * @param rigidBlock the first block
+     * @param rigidBlock1 the second block
+     */
+    public void linkRigidBlock(RigidBlock rigidBlock, RigidBlock rigidBlock1) {
+    }
 }

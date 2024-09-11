@@ -3,13 +3,34 @@ package fr.phylisiumstudio.soraxPhysic.commands;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.IncompleteRegionException;
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.MaxChangedBlocksException;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.session.SessionManager;
+import com.sk89q.worldedit.world.World;
+import com.sk89q.worldedit.world.block.BlockState;
 import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
+import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import javax.vecmath.Vector3f;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.vecmath.Vector3f;
 
 @CommandAlias("physics")
@@ -42,7 +63,7 @@ public class PhysicsCommands extends BaseCommand {
             sender.sendMessage("Sphere created");
         }
 
-        /*@Subcommand("convert")
+        @Subcommand("convert")
         @Description("Convert the WorldEdit selection to physics shapes (beta feature do not use if you don't know what you are doing)")
         @CommandPermission("physics.create.convert")
         public void convertSelection(Player player, float impulse, float damping, float tau){
@@ -52,6 +73,7 @@ public class PhysicsCommands extends BaseCommand {
             Region region;
             World world = session.getSelectionWorld();
             org.bukkit.World bukkitWorld = BukkitAdapter.adapt(world);
+            WorldPhysics worldPhysics = physicsManager.getWorldPhysics(bukkitWorld.getUID());
 
             try {
                 if (world == null) {
@@ -63,7 +85,7 @@ public class PhysicsCommands extends BaseCommand {
                 throw new IllegalArgumentException("Please make a WorldEdit selection first");
             }
 
-            Map<Block,RigidBody> bodies = new HashMap<>();
+            Map<Block, RigidBlock> bodies = new HashMap<>();
 
             // get block in the region
             for (BlockVector3 blockVector3 : region) {
@@ -73,7 +95,7 @@ public class PhysicsCommands extends BaseCommand {
                     continue;
                 }
 
-                RigidBody body = physicsManager.createBoxShape(block.getLocation(), block.getType(), 1, 1, 1, 1);
+                RigidBlock body = worldPhysics.createBox(block.getLocation(), block.getBlockData(), 1, 1, 1, 1);
                 bodies.put(block, body);
             }
 
@@ -92,7 +114,7 @@ public class PhysicsCommands extends BaseCommand {
                         BlockFace oppositeFace = blockFace.getOppositeFace();
                         assert oppositeFace != null;
 
-                        physicsManager.linkRigidBody(body, bodies.get(block1), blockFace, oppositeFace);
+                        worldPhysics.linkRigidBlock(bodies.get(block), bodies.get(block1));
                     }
                 }
             });
@@ -105,7 +127,7 @@ public class PhysicsCommands extends BaseCommand {
             }
 
             player.sendMessage("Selection converted");
-        }*/
+        }
     }
 
     @Subcommand("clear")

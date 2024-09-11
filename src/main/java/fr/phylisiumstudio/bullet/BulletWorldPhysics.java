@@ -276,7 +276,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     public void clear() {
-        synchronized (blocks) {
+        synchronized (PhysicsManager.lock) {
             for (RigidBlock block : blocks) {
                 bulletWorld.removeRigidBody(block.getRigidBody());
                 block.getBlockDisplay().remove();
