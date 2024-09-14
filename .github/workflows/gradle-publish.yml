@@ -1,6 +1,8 @@
 name: Build DEV Jars
 on:
   pull_request:
+    branches:
+      - main
     paths-ignore:
       - '.github/PULL_REQUEST_TEMPLATE.md'
       - '.gitignore'
@@ -9,6 +11,8 @@ on:
       - 'CONTRIBUTING.md'
       - 'README.md'
   push:
+    branches:
+      - main
     paths-ignore:
       - '.github/PULL_REQUEST_TEMPLATE.md'
       - '.gitignore'
@@ -17,20 +21,25 @@ on:
       - 'CONTRIBUTING.md'
       - 'README.md'
 jobs:
-  build_dev_jars:
-    name: Build DEV jars
+  build:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
-      - uses: actions/checkout@v2.3.4
-      - name: Setup JDK
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+      - name: Checkout project sources
+        uses: actions/checkout@v4
+      - name: Get commit hash
+        id: hash
+        run: echo "sha_short=$(git rev-parse --short ${{github.sha}})" >> $GITHUB_OUTPUT
       - name: Get version
         id: version
         run: echo "version=$(grep version gradle.properties | cut -d"=" -f2 | xargs)" >> $GITHUB_OUTPUT
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
       - name: Build with Gradle
         run: |
           chmod 777 gradlew
