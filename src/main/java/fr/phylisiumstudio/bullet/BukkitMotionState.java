@@ -1,10 +1,9 @@
 package fr.phylisiumstudio.bullet;
 
-import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.MotionState;
 import com.bulletphysics.linearmath.Transform;
 import fr.phylisiumstudio.soraxPhysic.SoraxPhysic;
-import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
+import fr.phylisiumstudio.logic.IRigidBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.BlockDisplay;
@@ -18,12 +17,12 @@ import org.joml.Matrix4f;
 
 import javax.vecmath.Quat4f;
 
-public class BukkitMotionState extends MotionState {
+public class BukkitMotionState extends MotionState implements fr.phylisiumstudio.logic.MotionState<BulletRigidBlock> {
     private final Transform transform = new Transform();
 
-    private final RigidBlock rigidBlock;
+    private final IRigidBlock rigidBlock;
 
-    public BukkitMotionState(RigidBlock rigidBlock) {
+    public BukkitMotionState(IRigidBlock rigidBlock) {
         this.rigidBlock = rigidBlock;
     }
 
@@ -78,7 +77,17 @@ public class BukkitMotionState extends MotionState {
         Bukkit.getScheduler().runTask(SoraxPhysic.getInstance(), runnable);
     }
 
-    public RigidBlock getRigidBlock() {
+    public IRigidBlock getRigidBlock() {
         return rigidBlock;
+    }
+
+    /**
+     * Update the object
+     *
+     * @param object The object to update
+     */
+    @Override
+    public void update(BulletRigidBlock object) {
+
     }
 }

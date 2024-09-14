@@ -28,6 +28,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+      - name: Get version
+        id: version
+        run: echo "version=$(grep version gradle.properties | cut -d"=" -f2 | xargs)" >> $GITHUB_OUTPUT
       - name: Build with Gradle
         run: |
           chmod 777 gradlew
@@ -36,8 +39,8 @@ jobs:
           echo "git_hash=$git_hash" >> $GITHUB_ENV
           echo "snapshotVersion=5.5-SNAPSHOT" >> $GITHUB_ENV
           echo "artifactPath=$(pwd)/builds" >> $GITHUB_ENV
-      - name: Upload Plugin jar
-        uses: actions/upload-artifact@v3
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: SoraxPhysic-${{ env.git_hash }}.jar
-          path: ${{ env.artifactPath }}/SoraxPhysic-1.0-SNAPSHOT-all.jar
+          name: SoraxPhysic-${{ env.git_hash }}-${{ steps.version.outputs.version }}
+          path: build/libs/SoraxPhysic*.jar

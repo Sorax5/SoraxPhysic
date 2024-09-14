@@ -1,9 +1,8 @@
 package fr.phylisiumstudio.soraxPhysic.listeners;
 
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
-import fr.phylisiumstudio.soraxPhysic.event.LeftClickRigidblockEvent;
 import fr.phylisiumstudio.soraxPhysic.event.RightClickRigidblockEvent;
-import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
+import fr.phylisiumstudio.logic.IRigidBlock;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
@@ -24,7 +23,7 @@ public class PlayerActionListener implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onRightClickRigidbody(RightClickRigidblockEvent event){
         Vector clickedPosition = event.getClickLocation().toVector();
-        RigidBlock rigidBlock = event.getRigidBlock();
+        IRigidBlock rigidBlock = event.getRigidBlock();
         Player player = event.getPlayer();
 
         player.spawnParticle(Particle.CRIT, clickedPosition.getX(), clickedPosition.getY(), clickedPosition.getZ(), 100);

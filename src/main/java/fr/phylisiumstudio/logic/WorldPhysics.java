@@ -1,20 +1,16 @@
 package fr.phylisiumstudio.logic;
 
-import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 
 import javax.vecmath.Vector3f;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Interface for the physics world
  */
-public abstract class WorldPhysics {
+public abstract class WorldPhysics<T> {
 
     /**
      * Step the simulation
@@ -38,7 +34,7 @@ public abstract class WorldPhysics {
      * Get the blocks
      * @return the blocks
      */
-    public abstract List<RigidBlock> getBlocks();
+    public abstract List<T> getBlocks();
 
     /**
      * Create a box
@@ -51,7 +47,7 @@ public abstract class WorldPhysics {
      * @param zScale    the z scale
      * @return the box
      */
-    public abstract RigidBlock createBox(Location location, BlockData blockData, float mass, float xScale, float yScale, float zScale);
+    public abstract T createBox(Location location, BlockData blockData, float mass, float xScale, float yScale, float zScale);
 
     /**
      * Create a sphere
@@ -61,13 +57,13 @@ public abstract class WorldPhysics {
      * @param mass     the mass
      * @return the sphere
      */
-    public abstract RigidBlock createSphere(Location location, BlockData data, float radius, float mass);
+    public abstract T createSphere(Location location, BlockData data, float radius, float mass);
 
     /**
      * Remove a block
      * @param block the block to remove
      */
-    public abstract void removeBlock(RigidBlock block);
+    public abstract void removeBlock(T block);
 
     /**
      * Clear the world
@@ -79,7 +75,7 @@ public abstract class WorldPhysics {
      * @param id the id
      * @return the block
      */
-    public abstract RigidBlock getBlock(UUID id);
+    public abstract T getBlock(UUID id);
 
     /**
      * convert region physics
@@ -131,6 +127,6 @@ public abstract class WorldPhysics {
      * @param rigidBlock the first block
      * @param rigidBlock1 the second block
      */
-    public void linkRigidBlock(RigidBlock rigidBlock, RigidBlock rigidBlock1) {
+    public void linkRigidBlock(T rigidBlock, T rigidBlock1) {
     }
 }

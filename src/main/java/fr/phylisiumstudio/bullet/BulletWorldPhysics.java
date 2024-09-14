@@ -7,7 +7,6 @@ import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.collision.shapes.BoxShape;
 import com.bulletphysics.collision.shapes.CompoundShape;
-import com.bulletphysics.collision.shapes.ConvexHullShape;
 import com.bulletphysics.collision.shapes.SphereShape;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
@@ -15,12 +14,9 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
-import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
-import com.bulletphysics.util.ObjectArrayList;
 import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
-import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -41,12 +37,12 @@ import java.util.concurrent.*;
 /**
  * A world physics implementation using bullet physics
  */
-public class BulletWorldPhysics extends WorldPhysics {
+public class BulletWorldPhysics extends WorldPhysics<BulletRigidBlock> {
 
     private DynamicsWorld bulletWorld;
     private final World bukkitWorld;
 
-    private final List<RigidBlock> blocks;
+    private final List<BulletRigidBlock> blocks;
 
     private float timespan = 1.0f / 20.0f;
     private int maxSubSteps = 30;
@@ -89,6 +85,8 @@ public class BulletWorldPhysics extends WorldPhysics {
         synchronized (PhysicsManager.lock) {
             try{
                 bulletWorld.stepSimulation(timespan, maxSubSteps);
+                bulletWorld.performDiscreteCollisionDetection();
+                bulletWorld.updateAabbs();
             }
             catch (Exception e){
                 logger.error("Error stepping simulation: " + e.getMessage(), e);
@@ -123,7 +121,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      * @return the blocks
      */
     @Override
-    public List<RigidBlock> getBlocks() {
+    public List<BulletRigidBlock> getBlocks() {
         return this.blocks;
     }
 
@@ -139,7 +137,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      * @return the box
      */
     @Override
-    public RigidBlock createBox(Location location, BlockData blockData, float mass, float xScale, float yScale, float zScale) {
+    public BulletRigidBlock createBox(Location location, BlockData blockData, float mass, float xScale, float yScale, float zScale) {
         assert location.getWorld().equals(bukkitWorld);
 
         BlockDisplay blockDisplay = bukkitWorld.spawn(location, BlockDisplay.class, display -> {
@@ -175,7 +173,7 @@ public class BulletWorldPhysics extends WorldPhysics {
         body.setWorldTransform(transform);
         body.setRestitution(0.0f);
 
-        RigidBlock rigidBlock = new RigidBlock(body, blockDisplay, interaction);
+        BulletRigidBlock rigidBlock = new BulletRigidBlock(body, blockDisplay, interaction);
         BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
         body.setMotionState(motionState);
 
@@ -203,7 +201,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      * @return the sphere
      */
     @Override
-    public RigidBlock createSphere(Location location, BlockData data, float radius, float mass) {
+    public BulletRigidBlock createSphere(Location location, BlockData data, float radius, float mass) {
         assert location.getWorld().equals(bukkitWorld);
         float length = (float) (radius * Math.sqrt(2));
 
@@ -237,7 +235,7 @@ public class BulletWorldPhysics extends WorldPhysics {
         body.setWorldTransform(transform);
         body.setRestitution(0.0f);
 
-        RigidBlock rigidBlock = new RigidBlock(body, blockDisplay, hitbox);
+        BulletRigidBlock rigidBlock = new BulletRigidBlock(body, blockDisplay, hitbox);
         BukkitMotionState motionState = new BukkitMotionState(rigidBlock);
         body.setMotionState(motionState);
 
@@ -262,7 +260,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      * @param block the block to remove
      */
     @Override
-    public void removeBlock(RigidBlock block) {
+    public void removeBlock(BulletRigidBlock block) {
         bulletWorld.removeRigidBody(block.getRigidBody());
         block.getBlockDisplay().remove();
         block.getInteraction().remove();
@@ -277,7 +275,7 @@ public class BulletWorldPhysics extends WorldPhysics {
     @Override
     public void clear() {
         synchronized (PhysicsManager.lock) {
-            for (RigidBlock block : blocks) {
+            for (BulletRigidBlock block : blocks) {
                 bulletWorld.removeRigidBody(block.getRigidBody());
                 block.getBlockDisplay().remove();
                 block.getInteraction().remove();
@@ -295,7 +293,7 @@ public class BulletWorldPhysics extends WorldPhysics {
      */
     @Override
     @Nullable
-    public RigidBlock getBlock(UUID id) {
+    public BulletRigidBlock getBlock(UUID id) {
         return this.blocks.stream().filter(block -> block.getUniqueId().equals(id)).findFirst().orElse(null);
     }
 

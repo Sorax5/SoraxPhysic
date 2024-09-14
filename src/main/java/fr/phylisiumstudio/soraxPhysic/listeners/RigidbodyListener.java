@@ -5,7 +5,7 @@ import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import fr.phylisiumstudio.soraxPhysic.event.LeftClickRigidblockEvent;
 import fr.phylisiumstudio.soraxPhysic.event.RightClickRigidblockEvent;
-import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
+import fr.phylisiumstudio.logic.IRigidBlock;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -36,10 +36,10 @@ public class RigidbodyListener implements Listener {
 
         WorldPhysics world = this.physicsManager.getWorldPhysics(event.getPlayer().getWorld().getUID());
 
-        List<RigidBlock> rigidBlocks = world.getBlocks();
+        List<IRigidBlock> rigidBlocks = world.getBlocks();
         World bukkitWorld = event.getPlayer().getWorld();
 
-        RigidBlock rigidBlock = rigidBlocks.stream()
+        IRigidBlock rigidBlock = rigidBlocks.stream()
                 .filter(motionState -> motionState.getInteraction().equals(hitbox))
                 .findFirst()
                 .orElse(null);
@@ -69,9 +69,9 @@ public class RigidbodyListener implements Listener {
 
         WorldPhysics worldPhysics = this.physicsManager.getWorldPhysics(player.getWorld().getUID());
 
-        List<RigidBlock> rigidBlocks = worldPhysics.getBlocks();
+        List<IRigidBlock> rigidBlocks = worldPhysics.getBlocks();
 
-        RigidBlock rigidBlock = rigidBlocks.stream()
+        IRigidBlock rigidBlock = rigidBlocks.stream()
                 .filter(motionState -> motionState.getInteraction().equals(hitbox))
                 .findFirst()
                 .orElse(null);

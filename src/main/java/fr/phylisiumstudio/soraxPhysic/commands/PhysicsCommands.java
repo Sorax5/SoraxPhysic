@@ -14,7 +14,7 @@ import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.*;
 import fr.phylisiumstudio.logic.WorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
-import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
+import fr.phylisiumstudio.logic.IRigidBlock;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -85,7 +85,7 @@ public class PhysicsCommands {
                                         throw new IllegalArgumentException("Please make a WorldEdit selection first");
                                     }
 
-                                    Map<Block, RigidBlock> bodies = new HashMap<>();
+                                    Map<Block, IRigidBlock> bodies = new HashMap<>();
 
                                     // get block in the region
                                     for (BlockVector3 blockVector3 : region) {
@@ -95,7 +95,7 @@ public class PhysicsCommands {
                                             continue;
                                         }
 
-                                        RigidBlock body = worldPhysics.createBox(block.getLocation(), block.getBlockData(), 1, 1, 1, 1);
+                                        IRigidBlock body = worldPhysics.createBox(block.getLocation(), block.getBlockData(), 1, 1, 1, 1);
                                         bodies.put(block, body);
                                     }
 
