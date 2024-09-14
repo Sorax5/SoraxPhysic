@@ -42,5 +42,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: SoraxPhysic-${{ env.git_hash }}-${{ steps.version.outputs.version }}
+          name: SoraxPhysic-${{ env.git_hash }}-${{ steps.version.outputs.version }}.jar
           path: build/libs/SoraxPhysic*.jar
