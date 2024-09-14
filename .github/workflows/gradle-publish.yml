@@ -2,7 +2,7 @@ name: Build DEV Jars
 on:
   pull_request:
     branches:
-      - main
+      - master
     paths-ignore:
       - '.github/PULL_REQUEST_TEMPLATE.md'
       - '.gitignore'
@@ -12,7 +12,7 @@ on:
       - 'README.md'
   push:
     branches:
-      - main
+      - master
     paths-ignore:
       - '.github/PULL_REQUEST_TEMPLATE.md'
       - '.gitignore'
