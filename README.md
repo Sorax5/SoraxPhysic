@@ -52,6 +52,9 @@ help
 
 ```/physics help``` - Show the help message.
 
+## For Developpers
+You can find the javadoc here : https://sorax5.github.io/SoraxPhysic/javadoc/
+
 ## Download
 You can download the plugin from the dev builds [here](https://github.com/Sorax5/SoraxPhysic/actions).
 
