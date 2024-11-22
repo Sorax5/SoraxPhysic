@@ -26,9 +26,14 @@ dependencies {
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.0-SNAPSHOT")
 
     implementation "dev.jorel:commandapi-bukkit-shade:9.5.0"
-    implementation "cz.advel.jbullet:jbullet:20101010-1"
     implementation "com.saicone.rtag:rtag:1.5.6"
     implementation "com.saicone.rtag:rtag-block:1.5.6"
+    implementation("de.fabmax:physx-jni:2.4.2")
+
+    runtimeOnly("de.fabmax:physx-jni:2.4.2:natives-windows")
+    runtimeOnly("de.fabmax:physx-jni:2.4.2:natives-linux")
+    runtimeOnly("de.fabmax:physx-jni:2.4.2:natives-macos")
+    runtimeOnly("de.fabmax:physx-jni:2.4.2:natives-macos-arm64")
 }
 
 def targetJavaVersion = 21
