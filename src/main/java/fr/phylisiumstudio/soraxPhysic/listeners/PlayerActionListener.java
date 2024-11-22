@@ -1,15 +1,18 @@
 package fr.phylisiumstudio.soraxPhysic.listeners;
 
+import com.saicone.rtag.RtagBlock;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
 import fr.phylisiumstudio.soraxPhysic.event.LeftClickRigidblockEvent;
 import fr.phylisiumstudio.soraxPhysic.event.RightClickRigidblockEvent;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.util.Vector;
 
 import javax.vecmath.Vector3f;
@@ -40,6 +43,14 @@ public class PlayerActionListener implements Listener {
         org.joml.Vector3f impulseJoml = new org.joml.Vector3f(impulse.x, impulse.y, impulse.z);
         org.joml.Vector3f clickedPositionJoml = new org.joml.Vector3f((float) clickedPosition.getX(), (float) clickedPosition.getY(), (float) clickedPosition.getZ());
         rigidBlock.applyImpulse(clickedPositionJoml, impulseJoml);
+    }
+
+    @EventHandler
+    public void onBlockPlaced(BlockPlaceEvent event){
+        Block block = event.getBlock();
+        RtagBlock rtagBlock = RtagBlock.of(block);
+
+
     }
 
     /*@EventHandler

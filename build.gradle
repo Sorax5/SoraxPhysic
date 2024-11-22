@@ -8,6 +8,7 @@ version = getProperty("version")
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
     maven {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
@@ -21,11 +22,13 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.0-SNAPSHOT")
 
     implementation "dev.jorel:commandapi-bukkit-shade:9.5.0"
     implementation "cz.advel.jbullet:jbullet:20101010-1"
+    implementation "com.saicone.rtag:rtag:1.5.6"
+    implementation "com.saicone.rtag:rtag-block:1.5.6"
 }
 
 def targetJavaVersion = 21
@@ -59,6 +62,8 @@ processResources {
 
 shadowJar {
     relocate("dev.jorel.commandapi", "fr.phylisiumstudio.commandapi")
+    relocate "com.saicone.rtag", project.group + ".libs.rtag"
+    minimize()
 }
 
 build.dependsOn shadowJar

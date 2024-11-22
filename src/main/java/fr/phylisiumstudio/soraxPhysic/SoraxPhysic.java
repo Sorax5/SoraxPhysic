@@ -14,6 +14,10 @@ public final class SoraxPhysic extends JavaPlugin {
     private static SoraxPhysic instance;
     private PhysicsManager physicsManager;
 
+    public SoraxPhysic() {
+        instance = this;
+    }
+
     @Override
     public void onLoad() {
         CommandAPI.onLoad(new CommandAPIBukkitConfig(this).verboseOutput(true));
