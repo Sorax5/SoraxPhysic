@@ -1,8 +1,9 @@
 package fr.phylisiumstudio.soraxPhysic.listeners;
 
-import fr.phylisiumstudio.bullet.BulletWorldPhysics;
 import fr.phylisiumstudio.logic.WorldPhysics;
+import fr.phylisiumstudio.physx.PhysxWorldPhysics;
 import fr.phylisiumstudio.soraxPhysic.PhysicsManager;
+import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldInitEvent;
@@ -23,7 +24,8 @@ public class WorldListener implements Listener {
 
     @EventHandler
     public void onWorldInit(WorldInitEvent event) {
-        BulletWorldPhysics worldPhysics = new BulletWorldPhysics(event.getWorld());
+        World world = event.getWorld();
+        WorldPhysics worldPhysics = new PhysxWorldPhysics(world.getUID(), world.getName(), world);
         physicsManager.registerWorld(worldPhysics);
     }
 }

@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id "com.gradleup.shadow" version "8.3.1"
+    id 'com.gradleup.shadow' version '8.3.3'
 }
 
 group = getProperty("groupId")
@@ -25,10 +25,10 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.0-SNAPSHOT")
 
-    implementation "dev.jorel:commandapi-bukkit-shade:9.5.0"
+    implementation "dev.jorel:commandapi-bukkit-shade:9.6.0"
     implementation "com.saicone.rtag:rtag:1.5.6"
     implementation "com.saicone.rtag:rtag-block:1.5.6"
-    implementation("de.fabmax:physx-jni:2.4.2")
+    implementation "de.fabmax:physx-jni:2.4.2"
 
     runtimeOnly("de.fabmax:physx-jni:2.4.2:natives-windows")
     runtimeOnly("de.fabmax:physx-jni:2.4.2:natives-linux")
@@ -66,9 +66,8 @@ processResources {
 }
 
 shadowJar {
-    relocate("dev.jorel.commandapi", "fr.phylisiumstudio.commandapi")
+    relocate("dev.jorel.commandapi", project.group + ".libs.commandapi")
     relocate "com.saicone.rtag", project.group + ".libs.rtag"
-    minimize()
 }
 
 build.dependsOn shadowJar

@@ -18,8 +18,8 @@ import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.joml.Vector3f;
 
-import javax.vecmath.Vector3f;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

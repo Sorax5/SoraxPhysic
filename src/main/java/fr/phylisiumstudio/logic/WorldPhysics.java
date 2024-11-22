@@ -3,13 +3,10 @@ package fr.phylisiumstudio.logic;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
+import org.joml.Vector3f;
 
-import javax.vecmath.Vector3f;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Interface for the physics world

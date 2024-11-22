@@ -14,8 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.util.Vector;
-
-import javax.vecmath.Vector3f;
+import org.joml.Vector3f;
 
 public class PlayerActionListener implements Listener {
     private final PhysicsManager physicsManager;
@@ -38,10 +37,10 @@ public class PlayerActionListener implements Listener {
         Vector direction = playerLocation.getDirection().subtract(clickedPosition);
         Vector3f impulse = new Vector3f((float) direction.getX(), (float) direction.getY(), (float) direction.getZ());
 
-        impulse.scale(5f);
+        //impulse.
 
-        org.joml.Vector3f impulseJoml = new org.joml.Vector3f(impulse.x, impulse.y, impulse.z);
-        org.joml.Vector3f clickedPositionJoml = new org.joml.Vector3f((float) clickedPosition.getX(), (float) clickedPosition.getY(), (float) clickedPosition.getZ());
+        Vector3f impulseJoml = new org.joml.Vector3f(impulse.x, impulse.y, impulse.z);
+        Vector3f clickedPositionJoml = new org.joml.Vector3f((float) clickedPosition.getX(), (float) clickedPosition.getY(), (float) clickedPosition.getZ());
         rigidBlock.applyImpulse(clickedPositionJoml, impulseJoml);
     }
 

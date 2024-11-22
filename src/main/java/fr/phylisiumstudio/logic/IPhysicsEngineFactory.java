@@ -1,14 +1,5 @@
 package fr.phylisiumstudio.logic;
 
-import com.bulletphysics.collision.shapes.BoxShape;
-import com.bulletphysics.collision.shapes.CollisionShape;
-import com.bulletphysics.collision.shapes.SphereShape;
-import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
-import com.bulletphysics.dynamics.RigidBody;
-import com.bulletphysics.linearmath.Transform;
-
-import javax.vecmath.Vector3f;
-
 /**
  * Factory for creating physics engine objects
  */

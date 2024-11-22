@@ -1,6 +1,5 @@
 package fr.phylisiumstudio.soraxPhysic.event;
 
-import com.bulletphysics.dynamics.RigidBody;
 import fr.phylisiumstudio.soraxPhysic.models.RigidBlock;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
