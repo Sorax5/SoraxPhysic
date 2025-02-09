@@ -78,10 +78,6 @@ public class PhysxWorldPhysics extends WorldPhysics {
         }
     }
 
-
-    /**
-     * Step the simulation
-     */
     @Override
     public void stepSimulation() {
         if (!isFrozen) {
@@ -93,47 +89,21 @@ public class PhysxWorldPhysics extends WorldPhysics {
         }
     }
 
-    /**
-     * Get the unique id of the world
-     *
-     * @return the unique id
-     */
     @Override
     public UUID getUniqueId() {
         return uniqueId;
     }
 
-    /**
-     * Get the world name
-     *
-     * @return the world name
-     */
     @Override
     public String getWorldName() {
         return worldName;
     }
 
-    /**
-     * Get the blocks
-     *
-     * @return the blocks
-     */
     @Override
     public List<RigidBlock> getBlocks() {
         return blocks;
     }
 
-    /**
-     * Create a box
-     *
-     * @param location  the location (must be in the same world)
-     * @param blockData the block data to use
-     * @param mass      the mass of the block
-     * @param xScale    the x scale
-     * @param yScale    the y scale
-     * @param zScale    the z scale
-     * @return the box
-     */
     @Override
     public RigidBlock createBox(Location location, BlockData blockData, float mass, float xScale, float yScale, float zScale) {
         assert location.getWorld().equals(bukkitWorld);
@@ -177,15 +147,6 @@ public class PhysxWorldPhysics extends WorldPhysics {
         return block;
     }
 
-    /**
-     * Create a sphere
-     *
-     * @param location the location (must be in the same world)
-     * @param data
-     * @param radius   the radius
-     * @param mass     the mass
-     * @return the sphere
-     */
     @Override
     public RigidBlock createSphere(Location location, BlockData data, float radius, float mass) {
         assert location.getWorld().equals(bukkitWorld);
@@ -231,11 +192,6 @@ public class PhysxWorldPhysics extends WorldPhysics {
         return block;
     }
 
-    /**
-     * Remove a block
-     *
-     * @param block the block to remove
-     */
     @Override
     public void removeBlock(RigidBlock block) {
         scene.removeActor(((PhysxRigidBlock) block).getRigidDynamic());
@@ -244,9 +200,6 @@ public class PhysxWorldPhysics extends WorldPhysics {
         blocks.remove(block);
     }
 
-    /**
-     * Clear the world
-     */
     @Override
     public void clear() {
         for (RigidBlock block : blocks) {
@@ -257,23 +210,11 @@ public class PhysxWorldPhysics extends WorldPhysics {
         blocks.clear();
     }
 
-    /**
-     * Get the block with the given id
-     *
-     * @param id the id
-     * @return the block
-     */
     @Override
     public RigidBlock getBlock(UUID id) {
         return blocks.stream().filter(block -> block.getUniqueId().equals(id)).findFirst().orElse(null);
     }
 
-    /**
-     * convert region physics
-     *
-     * @param pos1 the first position
-     * @param pos2 the second position
-     */
     @Override
     public void convertChunk(Vector3f pos1, Vector3f pos2) {
         int startX = (int) Math.min(pos1.x, pos2.x);
@@ -284,81 +225,64 @@ public class PhysxWorldPhysics extends WorldPhysics {
         int endY = (int) Math.max(pos1.y, pos2.y);
         int endZ = (int) Math.max(pos1.z, pos2.z);
 
-        for (int x = startX; x <= endX; x++) {
-            for (int y = startY; y <= endY; y++) {
-                for (int z = startZ; z <= endZ; z++) {
-                    Block block = bukkitWorld.getBlockAt(x, y, z);
-                    if (!block.getType().isAir()) {
-                        Location location = block.getLocation();
-                        BlockData blockData = block.getBlockData();
-                        createBox(location, blockData, 0, 1, 1, 1);
-                    }
-                }
-            }
-        }
+        // Calculate the center and half-sizes of the bounding box
+        float centerX = (startX + endX) / 2.0f;
+        float centerY = (startY + endY) / 2.0f;
+        float centerZ = (startZ + endZ) / 2.0f;
+
+        float halfSizeX = (endX - startX) / 2.0f;
+        float halfSizeY = (endY - startY) / 2.0f;
+        float halfSizeZ = (endZ - startZ) / 2.0f;
+
+        // Create the custom shape for the chunk
+        PxVec3 position = new PxVec3(centerX, centerY, centerZ);
+        PxTransform transform = new PxTransform(position);
+        PxBoxGeometry chunkGeometry = new PxBoxGeometry(halfSizeX, halfSizeY, halfSizeZ);
+        PxMaterial material = physics.createMaterial(0.5f, 0.5f, 0.5f);
+        PxShapeFlags shapeFlags = new PxShapeFlags((byte) (PxShapeFlagEnum.eSCENE_QUERY_SHAPE.value | PxShapeFlagEnum.eSIMULATION_SHAPE.value));
+        PxShape chunkShape = physics.createShape(chunkGeometry, material, true, shapeFlags);
+        PxRigidStatic chunk = physics.createRigidStatic(transform);
+        chunk.attachShape(chunkShape);
+        scene.addActor(chunk);
+
+        // Clean up temporary objects
+        chunkGeometry.destroy();
+        material.destroy();
+        shapeFlags.destroy();
+        position.destroy();
+        transform.destroy();
     }
 
-    /**
-     * Get the time span
-     */
     @Override
     public float getTimespan() {
         return timespan;
     }
 
-    /**
-     * Set the time span
-     *
-     * @param timespan
-     */
     @Override
     public void setTimespan(float timespan) {
         this.timespan = timespan;
     }
 
-    /**
-     * Get Max substeps
-     */
     @Override
     public int getMaxSubSteps() {
         return maxSubSteps;
     }
 
-    /**
-     * Set Max substeps
-     *
-     * @param maxSubSteps
-     */
     @Override
     public void setMaxSubSteps(int maxSubSteps) {
         this.maxSubSteps = maxSubSteps;
     }
 
-    /**
-     * set freeze
-     *
-     * @param freeze the freeze
-     */
     @Override
     public void setFreeze(boolean freeze) {
         isFrozen = freeze;
     }
 
-    /**
-     * is frozen
-     *
-     * @return is frozen
-     */
     @Override
     public boolean isFrozen() {
         return isFrozen;
     }
 
-    /**
-     * Verify if the world can run
-     *
-     * @return if the world can run
-     */
     @Override
     public boolean isRunning() {
         return !isFrozen;
